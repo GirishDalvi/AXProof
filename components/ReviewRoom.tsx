@@ -8,10 +8,11 @@ import { CompareView } from './CompareView';
 import { Annotation, AnnotationStatus, AnnotationType, AssetFile, AssetType, Attachment } from '../types';
 import { ArrowLeft, Play, Pause, Layers, MousePointer2, BoxSelect, CheckCircle, Lock, AlertCircle, FileDown, GitBranch, Send, Upload, X, ZoomIn, ZoomOut, Maximize, FileText, Image as ImageIcon, FileCode, Film, Package, Globe, Link as LinkIcon, Clock, Hourglass, Loader2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
+import { db } from '../db';
 
 export const ReviewRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getProject, addAnnotation, annotations, approveVersion, requestChanges, markInReview, markWaitingForReview, uploadNewVersion, currentUser } = useAXProof();
+  const { getProject, addAnnotation, annotations, approveVersion, requestChanges, markInReview, markWaitingForReview, uploadNewVersion, currentUser, saveFileToApp } = useAXProof();
   
   const project = getProject(id || '');
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
@@ -160,7 +161,26 @@ export const ReviewRoom: React.FC = () => {
     setIsSubmitModalOpen(false);
   };
 
-  const handleExport = async () => {
+  const handleSaveToApp = async () => {
+    try {
+        const blob = await db.getAsset(version.id);
+        if (blob) {
+            await saveFileToApp(blob, version.fileName || `${project.name}_v${version.versionNumber}`);
+            alert('File saved to your library!');
+        } else {
+            // If it's a remote URL or not in DB, fetch it
+            const response = await fetch(version.url);
+            const remoteBlob = await response.blob();
+            await saveFileToApp(remoteBlob, version.fileName || `${project.name}_v${version.versionNumber}`);
+            alert('File saved to your library!');
+        }
+    } catch (e) {
+        console.error("Save failed", e);
+        alert("Failed to save file to app.");
+    }
+  };
+
+  const handleExport = async (saveToApp: boolean = false) => {
     if (!canvasRef.current) return;
     setIsExporting(true);
     setIsPlaying(false);
@@ -279,7 +299,14 @@ export const ReviewRoom: React.FC = () => {
             setCurrentTime(currentTime); 
         }
 
-        doc.save(`${project.name}_v${version.versionNumber}_report.pdf`);
+        const fileName = `${project.name}_v${version.versionNumber}_report.pdf`;
+        if (saveToApp) {
+            const pdfBlob = doc.output('blob');
+            await saveFileToApp(pdfBlob, fileName);
+            alert('Report saved to your library!');
+        } else {
+            doc.save(fileName);
+        }
 
     } catch (e) {
         console.error("Export failed", e);
@@ -550,9 +577,26 @@ export const ReviewRoom: React.FC = () => {
                     <span className="text-xs font-bold text-green-700 uppercase tracking-wide">Approved</span>
                     <span className="text-[10px] text-gray-500">by {version.approvedBy || 'Admin'}</span>
                  </div>
-                 <Button variant="outline" size="sm" onClick={handleExport}>
-                     <FileDown className="w-4 h-4 mr-2" /> Export
-                 </Button>
+                 <div className="relative group/export">
+                     <Button variant="outline" size="sm" onClick={() => handleExport(false)} disabled={isExporting}>
+                         {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
+                         Export
+                     </Button>
+                     <div className="absolute right-0 top-full mt-1 hidden group-hover/export:block bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 p-1 w-48">
+                         <button 
+                             onClick={() => handleExport(true)}
+                             className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded flex items-center gap-2"
+                         >
+                             <FileText className="w-3 h-3" /> Save Report to App
+                         </button>
+                         <button 
+                             onClick={handleSaveToApp}
+                             className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded flex items-center gap-2"
+                         >
+                             <Package className="w-3 h-3" /> Save Original to App
+                         </button>
+                     </div>
+                 </div>
              </div>
           ) : isChangesRequired ? (
             <div className="flex items-center gap-3">
@@ -566,9 +610,25 @@ export const ReviewRoom: React.FC = () => {
             </div>
           ) : (
             <div className="flex gap-2">
-                 <Button variant="outline" size="sm" onClick={handleExport} title="Export Report">
-                     <FileDown className="w-4 h-4" />
-                 </Button>
+                 <div className="relative group/export">
+                     <Button variant="outline" size="sm" onClick={() => handleExport(false)} disabled={isExporting} title="Export Report">
+                         {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                     </Button>
+                     <div className="absolute right-0 top-full mt-1 hidden group-hover/export:block bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 p-1 w-48">
+                         <button 
+                             onClick={() => handleExport(true)}
+                             className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded flex items-center gap-2"
+                         >
+                             <FileText className="w-3 h-3" /> Save Report to App
+                         </button>
+                         <button 
+                             onClick={handleSaveToApp}
+                             className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded flex items-center gap-2"
+                         >
+                             <Package className="w-3 h-3" /> Save Original to App
+                         </button>
+                     </div>
+                 </div>
                 <Button variant="primary" size="sm" onClick={() => setIsSubmitModalOpen(true)}>
                     <Send className="w-4 h-4 mr-2" /> Submit Review
                 </Button>

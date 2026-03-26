@@ -1,5 +1,5 @@
 import { openDB, DBSchema } from 'idb';
-import { Project, Annotation, Folder, User } from './types';
+import { Project, Annotation, Folder, User, SavedFile } from './types';
 
 interface AXProofDB extends DBSchema {
   projects: {
@@ -23,10 +23,14 @@ interface AXProofDB extends DBSchema {
     key: string; // email
     value: User;
   };
+  saved_files: {
+    key: string;
+    value: SavedFile;
+  };
 }
 
 const DB_NAME = 'axproof-db';
-const DB_VERSION = 3; // Incremented for users store
+const DB_VERSION = 4; // Incremented for saved_files store
 
 export const initDB = async () => {
   return openDB<AXProofDB>(DB_NAME, DB_VERSION, {
@@ -46,6 +50,9 @@ export const initDB = async () => {
       }
       if (!db.objectStoreNames.contains('users')) {
         db.createObjectStore('users', { keyPath: 'email' });
+      }
+      if (!db.objectStoreNames.contains('saved_files')) {
+        db.createObjectStore('saved_files', { keyPath: 'id' });
       }
     },
   });
@@ -80,6 +87,10 @@ export const db = {
     const db = await initDB();
     return db.get('assets', id);
   },
+  async deleteAsset(id: string) {
+    const db = await initDB();
+    return db.delete('assets', id);
+  },
   async getFolders() {
     const db = await initDB();
     return db.getAll('folders');
@@ -99,5 +110,18 @@ export const db = {
   async saveUser(user: User) {
     const db = await initDB();
     return db.put('users', user);
+  },
+  async getSavedFiles() {
+    const db = await initDB();
+    return db.getAll('saved_files');
+  },
+  async saveSavedFile(file: SavedFile) {
+    const db = await initDB();
+    return db.put('saved_files', file);
+  },
+  async deleteSavedFile(id: string) {
+    const db = await initDB();
+    await db.delete('saved_files', id);
+    await db.delete('assets', id);
   }
 };

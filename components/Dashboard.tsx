@@ -2,14 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAXProof } from '../context/ZflowContext';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
-import { Clock, CheckCircle, AlertCircle, Plus, Search, FileVideo, FileImage, FileCode, Folder, FileText, ChevronDown, MoreVertical, Edit2, Trash2, FolderInput, FolderOpen, LayoutGrid, List, LogOut, Sun, Moon } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, Plus, Search, FileVideo, FileImage, FileCode, Folder, FileText, ChevronDown, MoreVertical, Edit2, Trash2, FolderInput, FolderOpen, LayoutGrid, List, LogOut, Sun, Moon, FileDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { UploadModal } from './UploadModal';
 import { AssetType, ProjectStatus } from '../types';
 
 export const Dashboard: React.FC = () => {
-  const { projects, folders, currentUser, updateProjectStatus, createFolder, deleteFolder, deleteProject, renameProject, moveProject, logout, theme, toggleTheme } = useAXProof();
+  const { projects, folders, savedFiles, deleteSavedFile, currentUser, updateProjectStatus, createFolder, deleteFolder, deleteProject, renameProject, moveProject, logout, theme, toggleTheme } = useAXProof();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'PROJECTS' | 'FILES'>('PROJECTS');
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -108,10 +109,16 @@ export const Dashboard: React.FC = () => {
             <div>
                 <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-2">Library</h3>
                 <button 
-                    onClick={() => setActiveFolderId(null)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFolderId === null ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                    onClick={() => { setActiveTab('PROJECTS'); setActiveFolderId(null); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'PROJECTS' && activeFolderId === null ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                 >
                     <LayoutGrid className="w-4 h-4" /> All Projects
+                </button>
+                <button 
+                    onClick={() => { setActiveTab('FILES'); setActiveFolderId(null); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FILES' ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                >
+                    <FileText className="w-4 h-4" /> My Files
                 </button>
             </div>
 
@@ -126,7 +133,7 @@ export const Dashboard: React.FC = () => {
                     {folders.map(folder => (
                         <div key={folder.id} className="group flex items-center justify-between pr-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                             <button 
-                                onClick={() => setActiveFolderId(folder.id)}
+                                onClick={() => { setActiveTab('PROJECTS'); setActiveFolderId(folder.id); }}
                                 className={`flex-1 flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFolderId === folder.id ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300' : 'text-gray-600 dark:text-gray-400'}`}
                             >
                                 <Folder className={`w-4 h-4 ${activeFolderId === folder.id ? 'fill-brand-200 dark:fill-brand-800 text-brand-500' : 'fill-gray-100 dark:fill-gray-600 text-gray-400 dark:text-gray-500'}`} /> 
@@ -169,10 +176,10 @@ export const Dashboard: React.FC = () => {
             <div className="flex justify-between items-start">
                 <div>
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {activeFolderId ? folders.find(f => f.id === activeFolderId)?.name : 'All Projects'}
+                    {activeTab === 'FILES' ? 'My Files' : activeFolderId ? folders.find(f => f.id === activeFolderId)?.name : 'All Projects'}
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">
-                    {activeFolderId ? `${filteredProjects.length} projects in folder` : `Overview of all creative assets`}
+                    {activeTab === 'FILES' ? `Manage your saved assets and reports` : activeFolderId ? `${filteredProjects.length} projects in folder` : `Overview of all creative assets`}
                 </p>
                 </div>
 
@@ -187,7 +194,7 @@ export const Dashboard: React.FC = () => {
                   </button>
                 
                   {/* Stats (only show on All Projects view for summary) */}
-                  {!activeFolderId && (
+                  {activeTab === 'PROJECTS' && !activeFolderId && (
                       <div className="flex gap-4">
                           <div className="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 transition-colors">
                               <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-full"><Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" /></div>
@@ -217,165 +224,248 @@ export const Dashboard: React.FC = () => {
 
             <UploadModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />
 
-            {/* Projects List */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[400px] transition-colors">
-                <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center gap-4">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input 
-                        type="text" 
-                        placeholder="Search projects by name or client..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 border border-gray-600 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-gray-700 dark:bg-gray-900 text-[#FFFFFF] placeholder-gray-400"
-                        />
+            {activeTab === 'PROJECTS' ? (
+                /* Projects List */
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[400px] transition-colors">
+                    <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center gap-4">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input 
+                            type="text" 
+                            placeholder="Search projects by name or client..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 border border-gray-600 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-gray-700 dark:bg-gray-900 text-[#FFFFFF] placeholder-gray-400"
+                            />
+                        </div>
+                        {/* Sort or other controls could go here */}
                     </div>
-                    {/* Sort or other controls could go here */}
-                </div>
-                
-                <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-                    <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 font-medium">
-                    <tr>
-                        <th className="px-6 py-3 w-[40%]">Project Name</th>
-                        <th className="px-6 py-3">Client</th>
-                        <th className="px-6 py-3">Version</th>
-                        <th className="px-6 py-3">Status</th>
-                        <th className="px-6 py-3 text-right">Action</th>
-                    </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {filteredProjects.length === 0 ? (
+                    
+                    <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+                        <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 font-medium">
                         <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center">
-                            <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
-                                <FolderOpen className="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" />
-                                <p className="text-base font-medium text-gray-900 dark:text-gray-200">No projects found</p>
-                                <p className="text-sm">Try adjusting your search or create a new project.</p>
-                                <Button className="mt-4" onClick={() => setIsUploadOpen(true)}>
-                                    <Plus className="w-4 h-4 mr-2" /> Create Project
-                                </Button>
-                            </div>
-                        </td>
+                            <th className="px-6 py-3 w-[40%]">Project Name</th>
+                            <th className="px-6 py-3">Client</th>
+                            <th className="px-6 py-3">Version</th>
+                            <th className="px-6 py-3">Status</th>
+                            <th className="px-6 py-3 text-right">Action</th>
                         </tr>
-                    ) : (
-                        filteredProjects.map(project => {
-                        const currentVersion = project.versions.find(v => v.id === project.currentVersionId);
-                        return (
-                            <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors group">
-                            <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                {project.thumbnail ? (
-                                    <img src={project.thumbnail} alt="" className="w-10 h-10 rounded object-cover bg-gray-200 dark:bg-gray-700 shadow-sm" />
-                                ) : (
-                                    <div className="w-10 h-10 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
-                                    {currentVersion && getIcon(currentVersion.assetType)}
-                                    </div>
-                                )}
-                                <div className="min-w-0">
-                                    <Link to={`/project/${project.id}`} className="font-medium text-gray-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 truncate block">
-                                        {project.name}
-                                    </Link>
-                                    <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-                                    {currentVersion && getIcon(currentVersion.assetType)}
-                                    <span>{currentVersion?.assetType}</span>
-                                    <span className="text-gray-300 dark:text-gray-600">|</span>
-                                    <span className="truncate max-w-[150px]">{currentVersion?.fileName || 'asset'}</span>
-                                    </div>
-                                </div>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4">{project.clientName}</td>
-                            <td className="px-6 py-4">
-                                <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs font-mono text-gray-600 dark:text-gray-300">v{currentVersion?.versionNumber}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                                <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
-                                <select
-                                    value={project.status}
-                                    onChange={(e) => updateProjectStatus(project.id, e.target.value as ProjectStatus)}
-                                    className={`
-                                        appearance-none pl-3 pr-8 py-1 rounded-full text-xs font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-500 transition-shadow dark:bg-opacity-20
-                                        ${project.status === ProjectStatus.APPROVED ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : ''}
-                                        ${project.status === ProjectStatus.CHANGES_REQUIRED ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : ''}
-                                        ${project.status === ProjectStatus.IN_REVIEW ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' : ''}
-                                        ${project.status === ProjectStatus.WAITING_FOR_REVIEW ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' : ''}
-                                    `}
-                                    >
-                                    <option value={ProjectStatus.WAITING_FOR_REVIEW}>Waiting for Review</option>
-                                    <option value={ProjectStatus.IN_REVIEW}>In Review</option>
-                                    <option value={ProjectStatus.CHANGES_REQUIRED}>Changes Required</option>
-                                    <option value={ProjectStatus.APPROVED}>Approved</option>
-                                    </select>
-                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                        <ChevronDown className={`w-3 h-3 ${
-                                        project.status === ProjectStatus.APPROVED ? 'text-green-800 dark:text-green-300' : 
-                                        project.status === ProjectStatus.CHANGES_REQUIRED ? 'text-red-800 dark:text-red-300' : 
-                                        project.status === ProjectStatus.WAITING_FOR_REVIEW ? 'text-purple-800 dark:text-purple-300' : 'text-blue-800 dark:text-blue-300'
-                                        }`} />
-                                    </div>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 text-right relative">
-                                <div className="flex items-center justify-end gap-2">
-                                    <Link to={`/project/${project.id}`}>
-                                        <Button variant="outline" size="sm">Review</Button>
-                                    </Link>
-                                    
-                                    <div className="relative">
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setActionMenuOpen(actionMenuOpen === project.id ? null : project.id);
-                                            }}
-                                            className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                                        >
-                                            <MoreVertical className="w-4 h-4" />
-                                        </button>
-
-                                        {actionMenuOpen === project.id && (
-                                            <div ref={actionMenuRef} className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-20 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
-                                                <button 
-                                                    onClick={() => {
-                                                        setRenameModal({ isOpen: true, projectId: project.id, currentName: project.name });
-                                                        setActionMenuOpen(null);
-                                                    }}
-                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-                                                >
-                                                    <Edit2 className="w-4 h-4" /> Rename
-                                                </button>
-                                                <button 
-                                                    onClick={() => {
-                                                        setMoveModal({ isOpen: true, projectId: project.id });
-                                                        setActionMenuOpen(null);
-                                                    }}
-                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-                                                >
-                                                    <FolderInput className="w-4 h-4" /> Move to Folder
-                                                </button>
-                                                <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
-                                                <button 
-                                                    onClick={() => {
-                                                        handleDeleteProject(project.id);
-                                                        setActionMenuOpen(null);
-                                                    }}
-                                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
-                                                >
-                                                    <Trash2 className="w-4 h-4" /> Delete
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                        {filteredProjects.length === 0 ? (
+                            <tr>
+                            <td colSpan={5} className="px-6 py-12 text-center">
+                                <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                                    <FolderOpen className="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" />
+                                    <p className="text-base font-medium text-gray-900 dark:text-gray-200">No projects found</p>
+                                    <p className="text-sm">Try adjusting your search or create a new project.</p>
+                                    <Button className="mt-4" onClick={() => setIsUploadOpen(true)}>
+                                        <Plus className="w-4 h-4 mr-2" /> Create Project
+                                    </Button>
                                 </div>
                             </td>
                             </tr>
-                        );
-                        })
-                    )}
-                    </tbody>
-                </table>
+                        ) : (
+                            filteredProjects.map(project => {
+                            const currentVersion = project.versions.find(v => v.id === project.currentVersionId);
+                            return (
+                                <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors group">
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                    {project.thumbnail ? (
+                                        <img src={project.thumbnail} alt="" className="w-10 h-10 rounded object-cover bg-gray-200 dark:bg-gray-700 shadow-sm" />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
+                                        {currentVersion && getIcon(currentVersion.assetType)}
+                                        </div>
+                                    )}
+                                    <div className="min-w-0">
+                                        <Link to={`/project/${project.id}`} className="font-medium text-gray-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 truncate block">
+                                            {project.name}
+                                        </Link>
+                                        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                                        {currentVersion && getIcon(currentVersion.assetType)}
+                                        <span>{currentVersion?.assetType}</span>
+                                        <span className="text-gray-300 dark:text-gray-600">|</span>
+                                        <span className="truncate max-w-[150px]">{currentVersion?.fileName || 'asset'}</span>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4">{project.clientName}</td>
+                                <td className="px-6 py-4">
+                                    <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs font-mono text-gray-600 dark:text-gray-300">v{currentVersion?.versionNumber}</span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
+                                    <select
+                                        value={project.status}
+                                        onChange={(e) => updateProjectStatus(project.id, e.target.value as ProjectStatus)}
+                                        className={`
+                                            appearance-none pl-3 pr-8 py-1 rounded-full text-xs font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-500 transition-shadow dark:bg-opacity-20
+                                            ${project.status === ProjectStatus.APPROVED ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : ''}
+                                            ${project.status === ProjectStatus.CHANGES_REQUIRED ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : ''}
+                                            ${project.status === ProjectStatus.IN_REVIEW ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' : ''}
+                                            ${project.status === ProjectStatus.WAITING_FOR_REVIEW ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300' : ''}
+                                        `}
+                                        >
+                                        <option value={ProjectStatus.WAITING_FOR_REVIEW}>Waiting for Review</option>
+                                        <option value={ProjectStatus.IN_REVIEW}>In Review</option>
+                                        <option value={ProjectStatus.CHANGES_REQUIRED}>Changes Required</option>
+                                        <option value={ProjectStatus.APPROVED}>Approved</option>
+                                        </select>
+                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <ChevronDown className={`w-3 h-3 ${
+                                            project.status === ProjectStatus.APPROVED ? 'text-green-800 dark:text-green-300' : 
+                                            project.status === ProjectStatus.CHANGES_REQUIRED ? 'text-red-800 dark:text-red-300' : 
+                                            project.status === ProjectStatus.WAITING_FOR_REVIEW ? 'text-purple-800 dark:text-purple-300' : 'text-blue-800 dark:text-blue-300'
+                                            }`} />
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 text-right relative">
+                                    <div className="flex items-center justify-end gap-2">
+                                        <Link to={`/project/${project.id}`}>
+                                            <Button variant="outline" size="sm">Review</Button>
+                                        </Link>
+                                        
+                                        <div className="relative">
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActionMenuOpen(actionMenuOpen === project.id ? null : project.id);
+                                                }}
+                                                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                                            >
+                                                <MoreVertical className="w-4 h-4" />
+                                            </button>
+    
+                                            {actionMenuOpen === project.id && (
+                                                <div ref={actionMenuRef} className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-20 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+                                                    <button 
+                                                        onClick={() => {
+                                                            setRenameModal({ isOpen: true, projectId: project.id, currentName: project.name });
+                                                            setActionMenuOpen(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" /> Rename
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => {
+                                                            setMoveModal({ isOpen: true, projectId: project.id });
+                                                            setActionMenuOpen(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                                                    >
+                                                        <FolderInput className="w-4 h-4" /> Move to Folder
+                                                    </button>
+                                                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                                                    <button 
+                                                        onClick={() => {
+                                                            handleDeleteProject(project.id);
+                                                            setActionMenuOpen(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" /> Delete
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </td>
+                                </tr>
+                            );
+                            })
+                        )}
+                        </tbody>
+                    </table>
+                    </div>
                 </div>
-            </div>
+            ) : (
+                /* Files List */
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[400px] transition-colors">
+                    <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center gap-4">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input 
+                                type="text" 
+                                placeholder="Search files..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 border border-gray-600 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-gray-700 dark:bg-gray-900 text-[#FFFFFF] placeholder-gray-400"
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
+                            <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 font-medium">
+                                <tr>
+                                    <th className="px-6 py-3 w-[40%]">File Name</th>
+                                    <th className="px-6 py-3">Type</th>
+                                    <th className="px-6 py-3">Size</th>
+                                    <th className="px-6 py-3">Saved On</th>
+                                    <th className="px-6 py-3 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                {savedFiles.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-12 text-center">
+                                            <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                                                <FileText className="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" />
+                                                <p className="text-base font-medium text-gray-900 dark:text-gray-200">No saved files</p>
+                                                <p className="text-sm">Save files from project reviews or attachments to see them here.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    savedFiles.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase())).map(file => (
+                                        <tr key={file.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
+                                                        {getIcon(file.assetType)}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="font-medium text-gray-900 dark:text-white truncate">{file.name}</p>
+                                                        <p className="text-xs text-gray-400 dark:text-gray-500 uppercase">{file.type}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">{file.assetType}</td>
+                                            <td className="px-6 py-4">{(file.size / (1024 * 1024)).toFixed(2)} MB</td>
+                                            <td className="px-6 py-4">{new Date(file.createdAt).toLocaleDateString()}</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <a href={file.url} download={file.name}>
+                                                        <Button variant="outline" size="sm">
+                                                            <FileDown className="w-4 h-4 mr-2" /> Download
+                                                        </Button>
+                                                    </a>
+                                                    <button 
+                                                        onClick={() => {
+                                                            if (confirm('Are you sure you want to delete this saved file?')) {
+                                                                deleteSavedFile(file.id);
+                                                            }
+                                                        }}
+                                                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
       </div>
 

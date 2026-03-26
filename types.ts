@@ -112,6 +112,16 @@ export interface Folder {
   createdAt: string;
 }
 
+export interface SavedFile {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  url: string; // Blob URL (regenerated on load)
+  assetType: AssetType;
+  createdAt: string;
+}
+
 export interface StoreState {
   currentUser: User;
   projects: Project[];

@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import JSZip from 'jszip';
-import { Project, User, Annotation, AnnotationStatus, ProjectStatus, AssetVersion, AssetType, AssetFile, Folder, Attachment } from '../types';
+import { Project, User, Annotation, AnnotationStatus, ProjectStatus, AssetVersion, AssetType, AssetFile, Folder, Attachment, SavedFile } from '../types';
 import { MOCK_PROJECTS as INITIAL_PROJECTS, MOCK_ANNOTATIONS as INITIAL_ANNOTATIONS } from '../constants';
-import { db } from '../utils/db';
+import { db } from '../db';
 
 interface AXProofContextType {
   currentUser: User | null;
@@ -11,6 +11,7 @@ interface AXProofContextType {
   logout: () => void;
   projects: Project[];
   folders: Folder[];
+  savedFiles: SavedFile[];
   annotations: Record<string, Annotation[]>;
   addAnnotation: (annotation: Annotation) => void;
   updateAnnotationStatus: (id: string, status: AnnotationStatus) => void;
@@ -31,6 +32,8 @@ interface AXProofContextType {
   processFile: (file: File) => Promise<{ url: string; assetType: AssetType; files?: AssetFile[] }>;
   processUrl: (url: string) => Promise<{ url: string; assetType: AssetType }>;
   processAttachment: (file: File) => Promise<Attachment>;
+  saveFileToApp: (file: File | Blob, name: string) => Promise<void>;
+  deleteSavedFile: (id: string) => Promise<void>;
   isLoading: boolean;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
@@ -42,6 +45,7 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [savedFiles, setSavedFiles] = useState<SavedFile[]>([]);
   const [annotations, setAnnotations] = useState<Record<string, Annotation[]>>({});
   const [isLoading, setIsLoading] = useState(true);
 
@@ -73,6 +77,7 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
         let loadedProjects = await db.getProjects();
         let loadedAnnotations = await db.getAnnotations();
         let loadedFolders = await db.getFolders();
+        let loadedSavedFiles = await db.getSavedFiles();
 
         // Check for session
         const storedUser = localStorage.getItem('axproof_user');
@@ -96,6 +101,16 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
             }
             loadedAnnotations = flatAnnotations;
         }
+
+        // Rehydrate Saved Files
+        const hydratedSavedFiles = await Promise.all(loadedSavedFiles.map(async (f) => {
+            const blob = await db.getAsset(f.id);
+            if (blob) {
+                return { ...f, url: URL.createObjectURL(blob) };
+            }
+            return f;
+        }));
+        setSavedFiles(hydratedSavedFiles);
 
         // Rehydrate Assets (Regenerate Blob URLs for local files)
         const hydratedProjects = await Promise.all(loadedProjects.map(async (project) => {
@@ -766,6 +781,32 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
   };
 
+  const saveFileToApp = async (file: File | Blob, name: string) => {
+      const id = `sf-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const type = file.type;
+      const size = file.size;
+      const assetType = getAssetType(type, name);
+      
+      await db.saveAsset(id, file);
+      const savedFile: SavedFile = {
+          id,
+          name,
+          type,
+          size,
+          url: URL.createObjectURL(file),
+          assetType,
+          createdAt: new Date().toISOString()
+      };
+      
+      await db.saveSavedFile(savedFile);
+      setSavedFiles(prev => [savedFile, ...prev]);
+  };
+
+  const deleteSavedFile = async (id: string) => {
+      await db.deleteSavedFile(id);
+      setSavedFiles(prev => prev.filter(f => f.id !== id));
+  };
+
   const uploadNewVersion = async (projectId: string, content: File | string) => {
     let url = '';
     let assetType = AssetType.IMAGE;
@@ -860,6 +901,9 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
       processFile,
       processUrl,
       processAttachment,
+      savedFiles,
+      saveFileToApp,
+      deleteSavedFile,
       isLoading,
       theme,
       toggleTheme
