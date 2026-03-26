@@ -17,7 +17,14 @@ async function startServer() {
   });
 
   app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', environment: process.env.NODE_ENV });
+    res.json({ 
+      status: 'ok', 
+      environment: process.env.NODE_ENV,
+      uploadsDir,
+      tempDir,
+      uploadsWritable: fs.existsSync(uploadsDir),
+      tempWritable: fs.existsSync(tempDir)
+    });
   });
 
   app.use(express.json({ limit: '100mb' }));
@@ -62,34 +69,36 @@ async function startServer() {
   });
 
   app.post(['/api/upload-zip', '/api/upload-zip/'], (req, res, next) => {
-    console.log(`[${new Date().toISOString()}] POST ${req.url} - Start`);
-    console.log('Headers:', JSON.stringify(req.headers));
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] POST ${req.url} - Start`);
+    console.log(`[${timestamp}] Headers:`, JSON.stringify(req.headers));
     
     upload.single('file')(req, res, (err) => {
       if (err) {
-        console.error('Multer error during ZIP upload:', err);
+        console.error(`[${timestamp}] Multer error during ZIP upload:`, err);
         return res.status(400).json({ 
           error: 'File upload failed', 
           details: err.message,
           code: (err as any).code
         });
       }
-      console.log('File uploaded to temp successfully:', req.file?.path);
-      console.log('Request body:', JSON.stringify(req.body));
+      console.log(`[${timestamp}] File uploaded to temp successfully:`, req.file?.path);
+      console.log(`[${timestamp}] Request body:`, JSON.stringify(req.body));
       next();
     });
   }, (req, res) => {
+    const timestamp = new Date().toISOString();
     try {
       if (!req.file) {
-        console.error('No file in request after multer');
+        console.error(`[${timestamp}] No file in request after multer`);
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
       const fileId = req.body.id || Date.now().toString();
       const extractPath = path.join(uploadsDir, fileId);
 
-      console.log(`Extracting ZIP to: ${extractPath}`);
-      console.log(`Source file: ${req.file.path}, Size: ${req.file.size} bytes`);
+      console.log(`[${timestamp}] Extracting ZIP to: ${extractPath}`);
+      console.log(`[${timestamp}] Source file: ${req.file.path}, Size: ${req.file.size} bytes`);
 
       if (!fs.existsSync(extractPath)) {
         fs.mkdirSync(extractPath, { recursive: true });
@@ -99,7 +108,7 @@ async function startServer() {
       
       // Extract first, then find entry file
       zip.extractAllTo(extractPath, true);
-      console.log('ZIP extracted successfully to', extractPath);
+      console.log(`[${timestamp}] ZIP extracted successfully to`, extractPath);
 
       const entries = zip.getEntries();
       

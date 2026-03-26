@@ -744,13 +744,16 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
             formData.append('file', file, name);
             formData.append('id', extractId);
 
-            console.log(`[${new Date().toISOString()}] Initiating ZIP upload to /api/upload-zip`, {
+            const apiBaseUrl = window.location.origin;
+            const uploadUrl = `${apiBaseUrl}/api/upload-zip`;
+
+            console.log(`[${new Date().toISOString()}] Initiating ZIP upload to ${uploadUrl}`, {
                 name,
                 size: file.size,
                 extractId
             });
 
-            const response = await fetch('/api/upload-zip', {
+            const response = await fetch(uploadUrl, {
                 method: 'POST',
                 body: formData
             });
