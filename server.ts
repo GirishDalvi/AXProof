@@ -11,6 +11,15 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(cors());
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+  });
+
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', environment: process.env.NODE_ENV });
+  });
+
   app.use(express.json({ limit: '100mb' }));
   app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
@@ -31,42 +40,9 @@ async function startServer() {
       fieldSize: 100 * 1024 * 1024 // 100MB
     }
   });
-  app.use('/uploads', express.static(uploadsDir, {
-    setHeaders: (res, filePath) => {
-      // Ensure correct MIME types and CORS
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      const ext = path.extname(filePath).toLowerCase();
-      if (ext === '.js' || ext === '.mjs') {
-        res.setHeader('Content-Type', 'application/javascript');
-      } else if (ext === '.css') {
-        res.setHeader('Content-Type', 'text/css');
-      } else if (ext === '.json') {
-        res.setHeader('Content-Type', 'application/json');
-      } else if (ext === '.svg') {
-        res.setHeader('Content-Type', 'image/svg+xml');
-      } else if (ext === '.png') {
-        res.setHeader('Content-Type', 'image/png');
-      } else if (ext === '.jpg' || ext === '.jpeg') {
-        res.setHeader('Content-Type', 'image/jpeg');
-      } else if (ext === '.gif') {
-        res.setHeader('Content-Type', 'image/gif');
-      } else if (ext === '.mp4') {
-        res.setHeader('Content-Type', 'video/mp4');
-      } else if (ext === '.webm') {
-        res.setHeader('Content-Type', 'video/webm');
-      } else if (ext === '.woff') {
-        res.setHeader('Content-Type', 'font/woff');
-      } else if (ext === '.woff2') {
-        res.setHeader('Content-Type', 'font/woff2');
-      } else if (ext === '.ttf') {
-        res.setHeader('Content-Type', 'font/ttf');
-      } else if (ext === '.otf') {
-        res.setHeader('Content-Type', 'font/otf');
-      }
-    }
-  }));
 
   app.post('/api/upload-zip', (req, res, next) => {
+    console.log('Handling ZIP upload...');
     upload.single('file')(req, res, (err) => {
       if (err) {
         console.error('Multer error:', err);
@@ -148,6 +124,41 @@ async function startServer() {
     }
   });
 
+  app.use('/uploads', express.static(uploadsDir, {
+    setHeaders: (res, filePath) => {
+      // Ensure correct MIME types and CORS
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      const ext = path.extname(filePath).toLowerCase();
+      if (ext === '.js' || ext === '.mjs') {
+        res.setHeader('Content-Type', 'application/javascript');
+      } else if (ext === '.css') {
+        res.setHeader('Content-Type', 'text/css');
+      } else if (ext === '.json') {
+        res.setHeader('Content-Type', 'application/json');
+      } else if (ext === '.svg') {
+        res.setHeader('Content-Type', 'image/svg+xml');
+      } else if (ext === '.png') {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (ext === '.jpg' || ext === '.jpeg') {
+        res.setHeader('Content-Type', 'image/jpeg');
+      } else if (ext === '.gif') {
+        res.setHeader('Content-Type', 'image/gif');
+      } else if (ext === '.mp4') {
+        res.setHeader('Content-Type', 'video/mp4');
+      } else if (ext === '.webm') {
+        res.setHeader('Content-Type', 'video/webm');
+      } else if (ext === '.woff') {
+        res.setHeader('Content-Type', 'font/woff');
+      } else if (ext === '.woff2') {
+        res.setHeader('Content-Type', 'font/woff2');
+      } else if (ext === '.ttf') {
+        res.setHeader('Content-Type', 'font/ttf');
+      } else if (ext === '.otf') {
+        res.setHeader('Content-Type', 'font/otf');
+      }
+    }
+  }));
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
@@ -165,6 +176,11 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
+  });
+
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   });
 }
 
