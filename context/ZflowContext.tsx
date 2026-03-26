@@ -34,6 +34,7 @@ interface AXProofContextType {
   processAttachment: (file: File) => Promise<Attachment>;
   saveFileToApp: (file: File | Blob, name: string) => Promise<void>;
   deleteSavedFile: (id: string) => Promise<void>;
+  rehydrateAsset: (projectId: string, versionId: string) => Promise<void>;
   isLoading: boolean;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
@@ -48,6 +49,7 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [savedFiles, setSavedFiles] = useState<SavedFile[]>([]);
   const [annotations, setAnnotations] = useState<Record<string, Annotation[]>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [hydratedVersions, setHydratedVersions] = useState<Set<string>>(new Set());
 
   // Theme State
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -118,6 +120,20 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
                  // Check if we have a stored asset blob for this version
                  const blob = await db.getAsset(v.id);
                  if (blob) {
+                     // If it's a ZIP, we don't rehydrate it on startup to avoid overwhelming the server/proxy
+                     // and to avoid "Cookie check" errors during background startup requests.
+                     // We only rehydrate simple files here.
+                     const name = (blob as File).name || 'unknown';
+                     const type = blob.type || '';
+                     const isZip = name.endsWith('.zip') || type === 'application/zip' || type === 'application/x-zip-compressed';
+                     
+                     if (isZip) {
+                         // For ZIPs, we'll rehydrate them on demand when they are viewed.
+                         // We just need to ensure the 'files' array is populated if it was before.
+                         // For now, we'll just return the version as is, and the UI will trigger rehydration.
+                         return v;
+                     }
+
                      // If we have a blob, we must regenerate the URLs because blob: URLs expire on refresh
                      try {
                          const processed = await processFileInternal(blob as File, v.id);
@@ -129,7 +145,6 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
                          };
                      } catch (e) {
                          console.error(`Failed to rehydrate asset for version ${v.id}:`, e);
-                         // Keep the old version data, maybe it's a remote URL or we can show an error state
                          return v;
                      }
                  }
@@ -681,12 +696,12 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 let errorMsg = 'Failed to upload and extract ZIP';
                 try {
                     const text = await response.text();
+                    console.error("Server error response text:", text);
                     try {
                         const errData = JSON.parse(text);
                         if (errData.error) errorMsg += `: ${errData.error}`;
                         if (errData.details) errorMsg += ` (${errData.details})`;
                     } catch (e) {
-                        console.error("Non-JSON error response:", text);
                         if (response.status === 413) {
                             errorMsg = 'File is too large for the server. Please try a smaller ZIP file (under 32MB).';
                         } else {
@@ -697,6 +712,18 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     // Ignore text read error
                 }
                 throw new Error(errorMsg);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error("Expected JSON but got:", contentType, text.substring(0, 500));
+                
+                if (text.includes('Cookie check') || text.includes('redirectToReturnUrl')) {
+                    throw new Error(`The platform is requesting a security check. Please try refreshing the page or interacting with the app first. (Cookie check intercepted)`);
+                }
+                
+                throw new Error(`Server returned an invalid response format (${contentType || 'unknown'}). This usually indicates a server-side error or misconfiguration.`);
             }
 
             const data = await response.json();
@@ -873,6 +900,48 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
+  const rehydrateAsset = async (projectId: string, versionId: string) => {
+    if (hydratedVersions.has(versionId)) return;
+
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const version = project.versions.find(v => v.id === versionId);
+    if (!version) return;
+
+    // Check if we have a stored asset blob
+    const blob = await db.getAsset(versionId);
+    if (!blob) return;
+
+    try {
+      const processed = await processFileInternal(blob as File, versionId);
+      
+      setProjects(prev => prev.map(p => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            versions: p.versions.map(v => {
+              if (v.id === versionId) {
+                return {
+                  ...v,
+                  url: processed.url,
+                  assetType: processed.files && processed.files.length > 0 ? processed.files[0].type : processed.assetType,
+                  files: processed.files
+                };
+              }
+              return v;
+            })
+          };
+        }
+        return p;
+      }));
+      setHydratedVersions(prev => new Set(prev).add(versionId));
+    } catch (e) {
+      console.error(`Failed to manually rehydrate asset ${versionId}:`, e);
+      throw e;
+    }
+  };
+
   return (
     <AXProofContext.Provider value={{
       currentUser,
@@ -904,6 +973,7 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
       savedFiles,
       saveFileToApp,
       deleteSavedFile,
+      rehydrateAsset,
       isLoading,
       theme,
       toggleTheme

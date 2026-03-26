@@ -12,10 +12,12 @@ import { db } from '../db';
 
 export const ReviewRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getProject, addAnnotation, annotations, approveVersion, requestChanges, markInReview, markWaitingForReview, uploadNewVersion, currentUser, saveFileToApp } = useAXProof();
+  const { getProject, addAnnotation, annotations, approveVersion, requestChanges, markInReview, markWaitingForReview, uploadNewVersion, currentUser, saveFileToApp, rehydrateAsset } = useAXProof();
   
   const project = getProject(id || '');
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
+  const [isRehydrating, setIsRehydrating] = useState(false);
+  const [rehydrationError, setRehydrationError] = useState<string | null>(null);
   
   // Player State
   const [currentTime, setCurrentTime] = useState(0);
@@ -31,6 +33,7 @@ export const ReviewRoom: React.FC = () => {
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [showAnnotations, setShowAnnotations] = useState(true);
+  const [showLiveOverlay, setShowLiveOverlay] = useState(true);
 
   // Modal State
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -55,6 +58,40 @@ export const ReviewRoom: React.FC = () => {
         }
     }
   }, [project, currentVersionId]);
+
+  // Rehydrate ZIP assets on demand
+  useEffect(() => {
+    if (!project || !currentVersionId) return;
+    const v = project.versions.find(ver => ver.id === currentVersionId);
+    if (!v) return;
+
+    // Check if it's a ZIP that needs rehydration
+    // We consider it a ZIP if it has files or if the URL points to /uploads/
+    const isZip = v.url?.includes('/uploads/') || (v.files && v.files.length > 0);
+    
+    if (isZip && !isRehydrating && !rehydrationError) {
+        const timer = setTimeout(() => {
+            setIsRehydrating(true);
+            setRehydrationError(null);
+            rehydrateAsset(project.id, currentVersionId)
+                .catch((err) => {
+                    console.error("Rehydration failed:", err);
+                    setRehydrationError(err.message || "Failed to rehydrate asset. Please try again.");
+                })
+                .finally(() => setIsRehydrating(false));
+        }, 500); // Small delay to ensure session is ready
+        return () => clearTimeout(timer);
+    }
+  }, [currentVersionId, project?.id, rehydrateAsset, rehydrationError, isRehydrating]);
+
+  const handleRetryRehydration = () => {
+    if (!project || !currentVersionId) return;
+    setRehydrationError(null);
+    setIsRehydrating(true);
+    rehydrateAsset(project.id, currentVersionId)
+        .catch((err) => setRehydrationError(err.message || "Failed to rehydrate asset."))
+        .finally(() => setIsRehydrating(false));
+  };
 
   // Handle active file reset when version changes
   useEffect(() => {
@@ -523,7 +560,14 @@ export const ReviewRoom: React.FC = () => {
             {/* Annotation Toggle */}
             <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
                 <button 
-                  onClick={() => setShowAnnotations(!showAnnotations)} 
+                  onClick={() => {
+                    const newValue = !showAnnotations;
+                    setShowAnnotations(newValue);
+                    // If it's an HTML asset, sync the live overlay state with the main annotation state
+                    if (currentAssetType === AssetType.HTML) {
+                      setShowLiveOverlay(newValue);
+                    }
+                  }} 
                   className={`p-1.5 rounded-md transition-colors ${showAnnotations ? 'bg-white shadow text-brand-600' : 'text-gray-500 hover:text-gray-900 hover:bg-white'}`} 
                   title={showAnnotations ? "Hide Annotations" : "Show Annotations"}
                 >
@@ -674,6 +718,26 @@ export const ReviewRoom: React.FC = () => {
         {/* Canvas Area */}
         <div className="flex-1 relative flex flex-col">
           <div className="flex-1 relative bg-gray-900 overflow-hidden">
+            {(isRehydrating || rehydrationError) && (
+                <div className="absolute inset-0 z-50 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center text-white p-6 text-center">
+                    {rehydrationError ? (
+                        <>
+                            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                            <h3 className="text-lg font-medium text-red-400">Rehydration Failed</h3>
+                            <p className="text-gray-300 text-sm mt-2 max-w-md">{rehydrationError}</p>
+                            <Button variant="primary" className="mt-6" onClick={handleRetryRehydration}>
+                                <Upload className="w-4 h-4 mr-2" /> Retry Rehydration
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Loader2 className="w-12 h-12 text-brand-500 animate-spin mb-4" />
+                            <h3 className="text-lg font-medium">Rehydrating Asset...</h3>
+                            <p className="text-gray-400 text-sm mt-2">Preparing the creative for review. This may take a moment for larger packages.</p>
+                        </>
+                    )}
+                </div>
+            )}
             <ReviewCanvas
               ref={canvasRef}
               version={version}
@@ -687,6 +751,7 @@ export const ReviewRoom: React.FC = () => {
               readOnly={isLocked}
               zoom={zoom}
               showAnnotations={showAnnotations}
+              showLiveOverlay={showLiveOverlay}
               activeAssetUrl={activeFile?.url}
               activeAssetType={activeFile?.type}
             >

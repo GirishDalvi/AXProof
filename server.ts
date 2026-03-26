@@ -24,11 +24,18 @@ async function startServer() {
   app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
   // Ensure uploads and temp directories exist
-  const uploadsDir = path.join(process.cwd(), 'uploads');
+  const isProd = process.env.NODE_ENV === 'production';
+  const uploadsDir = isProd ? '/tmp/uploads' : path.join(process.cwd(), 'uploads');
+  const tempDir = isProd ? '/tmp/temp' : path.join(process.cwd(), 'temp');
+
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`CWD: ${process.cwd()}`);
+  console.log(`Uploads Dir: ${uploadsDir}`);
+  console.log(`Temp Dir: ${tempDir}`);
+
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
-  const tempDir = path.join(process.cwd(), 'temp');
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
   }
@@ -42,22 +49,26 @@ async function startServer() {
   });
 
   app.post('/api/upload-zip', (req, res, next) => {
-    console.log('Handling ZIP upload...');
+    console.log('Handling ZIP upload request...');
     upload.single('file')(req, res, (err) => {
       if (err) {
-        console.error('Multer error:', err);
+        console.error('Multer error during ZIP upload:', err);
         return res.status(400).json({ error: 'File upload failed', details: err.message });
       }
+      console.log('File uploaded to temp successfully:', req.file?.path);
       next();
     });
   }, (req, res) => {
     try {
       if (!req.file) {
+        console.error('No file in request after multer');
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
       const fileId = req.body.id || Date.now().toString();
       const extractPath = path.join(uploadsDir, fileId);
+
+      console.log(`Extracting ZIP to: ${extractPath}`);
 
       if (!fs.existsSync(extractPath)) {
         fs.mkdirSync(extractPath, { recursive: true });
@@ -67,6 +78,7 @@ async function startServer() {
       
       // Extract first, then find entry file
       zip.extractAllTo(extractPath, true);
+      console.log('ZIP extracted successfully');
 
       const entries = zip.getEntries();
       
@@ -100,6 +112,7 @@ async function startServer() {
       }
 
       if (!entryFile) {
+        console.error('No valid HTML file found in ZIP');
         return res.status(400).json({ error: 'No valid HTML file found in ZIP' });
       }
 
@@ -107,6 +120,7 @@ async function startServer() {
       const normalizedEntry = entryFile.entryName.replace(/\\/g, '/');
       const url = `/uploads/${fileId}/${normalizedEntry}`;
 
+      console.log(`ZIP processing complete. Entry URL: ${url}`);
       res.json({ url, id: fileId });
     } catch (error: any) {
       console.error('Error extracting ZIP:', error);
@@ -122,6 +136,12 @@ async function startServer() {
       }
       res.status(500).json({ error: 'Failed to extract ZIP', details: error.message });
     }
+  });
+
+  // Catch-all for other API routes to avoid returning index.html for POST/PUT/DELETE
+  app.all('/api/*', (req, res) => {
+    console.log(`Unknown API route: ${req.method} ${req.url}`);
+    res.status(404).json({ error: 'API route not found' });
   });
 
   app.use('/uploads', express.static(uploadsDir, {

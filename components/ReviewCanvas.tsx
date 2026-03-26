@@ -25,6 +25,7 @@ interface ReviewCanvasProps {
   readOnly?: boolean;
   zoom?: number;
   showAnnotations?: boolean;
+  showLiveOverlay?: boolean;
   // Overrides for multi-file assets
   activeAssetUrl?: string; 
   activeAssetType?: AssetType;
@@ -93,6 +94,7 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
   readOnly = false,
   zoom = 1,
   showAnnotations = true,
+  showLiveOverlay = true,
   activeAssetUrl,
   activeAssetType,
   scrollRef,
@@ -792,7 +794,7 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
             <iframe 
               ref={iframeRef}
               src={currentUrl} 
-              className={`absolute top-0 left-0 w-full h-full border-none ${tool !== 'INTERACT' ? 'pointer-events-none' : ''} ${isIframeLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`} 
+              className={`absolute top-0 left-0 w-full h-full border-none z-10 ${tool !== 'INTERACT' ? 'pointer-events-none' : ''} ${isIframeLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`} 
               title="HTML Proof"
               sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
               style={{ margin: 0, padding: 0 }}
@@ -817,7 +819,20 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
             />
             {/* Transparent overlay to capture annotation clicks */}
             {tool !== 'INTERACT' && (
-              <div className="absolute inset-0 bg-transparent" /> 
+              <div className="absolute inset-0 bg-transparent z-20" /> 
+            )}
+            
+            {/* Secondary Annotation Overlay for Live Website */}
+            {showAnnotations && showLiveOverlay && (
+              <div 
+                className="absolute inset-0 pointer-events-none z-30"
+                style={{
+                  width: '100%',
+                  height: '100%'
+                }}
+              >
+                {children}
+              </div>
             )}
           </div>
         );
@@ -888,7 +903,7 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
             )}
 
             {/* Pins & Boxes Overlay */}
-            {children}
+            {(activeAssetType || version.assetType) !== AssetType.HTML && children}
           </div>
         )}
       </div>
