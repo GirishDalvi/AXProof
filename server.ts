@@ -33,12 +33,25 @@ async function startServer() {
   console.log(`Uploads Dir: ${uploadsDir}`);
   console.log(`Temp Dir: ${tempDir}`);
 
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-  if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir, { recursive: true });
-  }
+  // Directory health check
+  const checkDir = (dir: string, name: string) => {
+    try {
+      if (!fs.existsSync(dir)) {
+        console.log(`Creating ${name} directory: ${dir}`);
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      // Test writability
+      const testFile = path.join(dir, '.write-test');
+      fs.writeFileSync(testFile, 'test');
+      fs.unlinkSync(testFile);
+      console.log(`${name} directory is writable: ${dir}`);
+    } catch (err: any) {
+      console.error(`Error with ${name} directory ${dir}:`, err.message);
+    }
+  };
+
+  checkDir(uploadsDir, 'Uploads');
+  checkDir(tempDir, 'Temp');
 
   const upload = multer({ 
     dest: tempDir,
@@ -48,14 +61,21 @@ async function startServer() {
     }
   });
 
-  app.post('/api/upload-zip', (req, res, next) => {
-    console.log('Handling ZIP upload request...');
+  app.post(['/api/upload-zip', '/api/upload-zip/'], (req, res, next) => {
+    console.log(`[${new Date().toISOString()}] POST ${req.url} - Start`);
+    console.log('Headers:', JSON.stringify(req.headers));
+    
     upload.single('file')(req, res, (err) => {
       if (err) {
         console.error('Multer error during ZIP upload:', err);
-        return res.status(400).json({ error: 'File upload failed', details: err.message });
+        return res.status(400).json({ 
+          error: 'File upload failed', 
+          details: err.message,
+          code: (err as any).code
+        });
       }
       console.log('File uploaded to temp successfully:', req.file?.path);
+      console.log('Request body:', JSON.stringify(req.body));
       next();
     });
   }, (req, res) => {
@@ -69,6 +89,7 @@ async function startServer() {
       const extractPath = path.join(uploadsDir, fileId);
 
       console.log(`Extracting ZIP to: ${extractPath}`);
+      console.log(`Source file: ${req.file.path}, Size: ${req.file.size} bytes`);
 
       if (!fs.existsSync(extractPath)) {
         fs.mkdirSync(extractPath, { recursive: true });
@@ -78,7 +99,7 @@ async function startServer() {
       
       // Extract first, then find entry file
       zip.extractAllTo(extractPath, true);
-      console.log('ZIP extracted successfully');
+      console.log('ZIP extracted successfully to', extractPath);
 
       const entries = zip.getEntries();
       
@@ -135,6 +156,23 @@ async function startServer() {
         }
       }
       res.status(500).json({ error: 'Failed to extract ZIP', details: error.message });
+    }
+  });
+
+  app.get('/api/debug-storage', (req, res) => {
+    try {
+      const info = {
+        uploadsDir,
+        tempDir,
+        uploadsExists: fs.existsSync(uploadsDir),
+        tempExists: fs.existsSync(tempDir),
+        uploadsContent: fs.existsSync(uploadsDir) ? fs.readdirSync(uploadsDir).slice(0, 10) : [],
+        nodeEnv: process.env.NODE_ENV,
+        cwd: process.cwd()
+      };
+      res.json(info);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
     }
   });
 

@@ -687,10 +687,20 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
             formData.append('file', file, name);
             formData.append('id', extractId);
 
+            console.log(`[${new Date().toISOString()}] Initiating ZIP upload to /api/upload-zip`, {
+                name,
+                size: file.size,
+                extractId
+            });
+
             const response = await fetch('/api/upload-zip', {
                 method: 'POST',
                 body: formData
             });
+
+            console.log(`[${new Date().toISOString()}] ZIP upload response status: ${response.status} ${response.statusText}`);
+            const contentType = response.headers.get('content-type');
+            console.log(`[${new Date().toISOString()}] ZIP upload response content-type: ${contentType}`);
 
             if (!response.ok) {
                 let errorMsg = 'Failed to upload and extract ZIP';
@@ -714,7 +724,6 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 throw new Error(errorMsg);
             }
 
-            const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 const text = await response.text();
                 console.error("Expected JSON but got:", contentType, text.substring(0, 500));
