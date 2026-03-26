@@ -3,10 +3,22 @@ import JSZip from 'jszip';
 import { Project, User, Annotation, AnnotationStatus, ProjectStatus, AssetVersion, AssetType, AssetFile, Folder, Attachment, SavedFile } from '../types';
 import { MOCK_PROJECTS as INITIAL_PROJECTS, MOCK_ANNOTATIONS as INITIAL_ANNOTATIONS } from '../constants';
 import { db } from '../db';
+import { auth, storage } from '../firebase';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup
+} from 'firebase/auth';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface AXProofContextType {
   currentUser: User | null;
   login: (email: string, pass: string) => Promise<boolean>;
+  loginWithGoogle: () => Promise<void>;
   signup: (email: string, pass: string, name: string) => Promise<void>;
   logout: () => void;
   projects: Project[];
@@ -74,6 +86,20 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Initialization: Load from DB or Seed Mock Data
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            setCurrentUser({
+                id: user.uid,
+                name: user.displayName || user.email?.split('@')[0] || 'User',
+                email: user.email || '',
+                avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=random`,
+                role: user.email?.toLowerCase() === 'gdalvi01@affinityx.com' ? 'ADMIN' : 'REVIEWER'
+            });
+        } else {
+            setCurrentUser(null);
+        }
+    });
+
     const loadData = async () => {
       try {
         let loadedProjects = await db.getProjects();
@@ -191,43 +217,74 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     loadData();
+    return () => unsubscribe();
   }, []);
 
   // --- Auth Management ---
 
   const login = async (email: string, pass: string): Promise<boolean> => {
-      const user = await db.getUser(email);
-      if (user && user.password === pass) {
-          const { password, ...safeUser } = user;
-          setCurrentUser(safeUser as User);
-          localStorage.setItem('axproof_user', JSON.stringify(safeUser));
+      try {
+          await signInWithEmailAndPassword(auth, email, pass);
           return true;
+      } catch (error: any) {
+          console.error("Login error:", error);
+          if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+              throw new Error("Password or Email Incorrect");
+          }
+          throw error;
       }
-      return false;
   };
 
-  const signup = async (email: string, pass: string, name: string) => {
-      // Check Admin Rule
-      const role = email.toLowerCase() === 'gdalvi01@affinityx.com' ? 'ADMIN' : 'REVIEWER';
-
-      const newUser: User = {
-          id: `u-${Date.now()}`,
-          name,
-          email,
-          password: pass,
-          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
-          role
-      };
-
-      await db.saveUser(newUser);
-      const { password, ...safeUser } = newUser;
-      setCurrentUser(safeUser as User);
-      localStorage.setItem('axproof_user', JSON.stringify(safeUser));
+  const loginWithGoogle = async () => {
+      try {
+          const provider = new GoogleAuthProvider();
+          await signInWithPopup(auth, provider);
+      } catch (error: any) {
+          console.error("Google login error:", error);
+          throw error;
+      }
   };
 
-  const logout = () => {
-      setCurrentUser(null);
-      localStorage.removeItem('axproof_user');
+  const signup = async (email: string, pass: string, name: string, profilePhoto?: File) => {
+      try {
+          const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+          const user = userCredential.user;
+
+          let photoURL = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
+          if (profilePhoto) {
+              const storageRef = ref(storage, `avatars/${user.uid}`);
+              await uploadBytes(storageRef, profilePhoto);
+              photoURL = await getDownloadURL(storageRef);
+          }
+
+          await updateProfile(user, {
+              displayName: name,
+              photoURL: photoURL
+          });
+
+          // Trigger state update
+          setCurrentUser({
+              id: user.uid,
+              name: name,
+              email: email,
+              avatar: photoURL,
+              role: email.toLowerCase() === 'gdalvi01@affinityx.com' ? 'ADMIN' : 'REVIEWER'
+          });
+      } catch (error: any) {
+          console.error("Signup error:", error);
+          if (error.code === 'auth/email-already-in-use') {
+              throw new Error("User already exists. Sign in?");
+          }
+          throw error;
+      }
+  };
+
+  const logout = async () => {
+      try {
+          await signOut(auth);
+      } catch (error) {
+          console.error("Logout error:", error);
+      }
   };
 
   // --- Project Management ---
