@@ -12,7 +12,7 @@ import { db } from '../db';
 
 export const ReviewRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getProject, addAnnotation, annotations, approveVersion, requestChanges, markInReview, markWaitingForReview, uploadNewVersion, currentUser, saveFileToApp, rehydrateAsset, deleteProject } = useAXProof();
+  const { getProject, addAnnotation, annotations, approveVersion, requestChanges, markInReview, markWaitingForReview, uploadNewVersion, currentUser, saveFileToApp, rehydrateAsset, deleteProject, warmupConnection } = useAXProof();
   
   const project = getProject(id || '');
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
@@ -85,13 +85,20 @@ export const ReviewRoom: React.FC = () => {
     }
   }, [currentVersionId, project?.id, rehydrateAsset, rehydrationError, isRehydrating]);
 
-  const handleRetryRehydration = () => {
+  const handleRetryRehydration = async () => {
     if (!project || !currentVersionId) return;
     setRehydrationError(null);
     setIsRehydrating(true);
-    rehydrateAsset(project.id, currentVersionId)
-        .catch((err) => setRehydrationError(err.message || "Failed to rehydrate asset."))
-        .finally(() => setIsRehydrating(false));
+    try {
+        // Aggressively warm up the connection before retrying
+        await warmupConnection();
+        await rehydrateAsset(project.id, currentVersionId);
+    } catch (err: any) {
+        console.error("Manual retry failed:", err);
+        setRehydrationError(err.message || "Failed to rehydrate asset. Please try again.");
+    } finally {
+        setIsRehydrating(false);
+    }
   };
 
   // Handle active file reset when version changes
@@ -142,6 +149,9 @@ export const ReviewRoom: React.FC = () => {
 
   const handleCanvasClick = (x: number, y: number, timestamp?: number, type: AnnotationType = AnnotationType.PIN, width?: number, height?: number) => {
     if (isLocked) return; // Prevent creation if locked
+
+    // Clear active annotation when clicking on canvas
+    setActiveAnnotationId(null);
 
     if (tempAnnotation) {
       setTempAnnotation(null); 
@@ -247,10 +257,31 @@ export const ReviewRoom: React.FC = () => {
         doc.line(10, y, 200, y);
         y += 10;
 
-        // Capture logic
-        const sortedAnns = [...currentAnnotations].sort((a,b) => (a.pinNumber - b.pinNumber));
+        // Save original file to restore later
+        const originalFile = activeFile;
 
-        for (const ann of sortedAnns) {
+        // Capture logic
+        // Use ALL annotations for the project to ensure comprehensive report
+        const allAnns = [...rawAnnotations].sort((a,b) => (a.pinNumber - b.pinNumber));
+
+        for (const ann of allAnns) {
+            // If multi-file, we might need to switch file to capture snapshot
+            if (ann.filePath && ann.filePath !== activeFile?.path) {
+                const file = version.files?.find(f => f.path === ann.filePath);
+                if (file) {
+                    setActiveFile(file);
+                    // Wait for rehydration to start and then finish
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    let waitCount = 0;
+                    while (isRehydrating && waitCount < 50) { // Max 5s wait
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        waitCount++;
+                    }
+                    // Give it a bit more time to render
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+
             // Check if we need new page
             if (y > 250) {
                 doc.addPage();
@@ -342,6 +373,11 @@ export const ReviewRoom: React.FC = () => {
         // Return to original time if video/gif
         if (hasTimeline && canvasRef.current) {
             setCurrentTime(currentTime); 
+        }
+
+        // Restore original file
+        if (originalFile && originalFile.path !== activeFile?.path) {
+            setActiveFile(originalFile);
         }
 
         const fileName = `${project.name}_v${version.versionNumber}_report.pdf`;
@@ -790,6 +826,9 @@ export const ReviewRoom: React.FC = () => {
             >
               {/* Render Existing Annotations */}
               {currentAnnotations.map(ann => {
+                 // If an annotation is active, only show that one and hide others
+                 if (activeAnnotationId && activeAnnotationId !== ann.id) return null;
+
                  // Visibility logic for Video/GIF
                  const isVisible = !hasTimeline || (ann.timestamp !== undefined && Math.abs(currentTime - ann.timestamp) < 2);
                  if (!isVisible) return null;

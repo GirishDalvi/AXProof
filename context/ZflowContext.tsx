@@ -47,6 +47,7 @@ interface AXProofContextType {
   saveFileToApp: (file: File | Blob, name: string) => Promise<void>;
   deleteSavedFile: (id: string) => Promise<void>;
   rehydrateAsset: (projectId: string, versionId: string) => Promise<void>;
+  warmupConnection: () => Promise<void>;
   isLoading: boolean;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
@@ -84,6 +85,42 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
+  // --- Connection Warmup ---
+  const warmupConnection = async () => {
+    console.log(`[${new Date().toISOString()}] Warming up connection to establish session cookies...`);
+    try {
+      // 1. Fetch root and health check with credentials to ensure cookies are set
+      const timestamp = Date.now();
+      await Promise.all([
+        fetch(`/?t=${timestamp}`, { credentials: 'include' }).catch(() => {}),
+        fetch(`/api/health?t=${timestamp}`, { credentials: 'include' }).catch(() => {})
+      ]);
+
+      // 2. Aggressive warmup: Use a hidden iframe to hit the health endpoint
+      // This is often more effective at clearing proxy-level "Cookie checks"
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = `/api/health?t=${timestamp}&mode=warmup`;
+      document.body.appendChild(iframe);
+      
+      await new Promise(resolve => {
+        const timer = setTimeout(resolve, 3000);
+        iframe.onload = () => { clearTimeout(timer); resolve(null); };
+        iframe.onerror = () => { clearTimeout(timer); resolve(null); };
+      });
+      
+      if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+      }
+
+      // 3. Wait a bit for cookies to be processed by the browser
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log(`[${new Date().toISOString()}] Connection warmup complete.`);
+    } catch (e) {
+      console.error("Connection warmup failed", e);
+    }
+  };
+
   // Initialization: Load from DB or Seed Mock Data
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -103,7 +140,7 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const loadData = async () => {
       try {
         // Warm up the connection to establish cookies and avoid "Cookie check" interceptions
-        fetch('/api/health', { credentials: 'include' }).catch(() => {});
+        await warmupConnection();
 
         let loadedProjects = await db.getProjects();
         let loadedAnnotations = await db.getAnnotations();
@@ -796,14 +833,20 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const initialContentType = response.headers.get('content-type');
             if (response.ok && initialContentType && initialContentType.includes('text/html')) {
                 const text = await response.clone().text();
-                if (text.includes('Cookie check') || text.includes('redirectToReturnUrl')) {
-                    console.log(`[${new Date().toISOString()}] Cookie check detected, warming up connection...`);
-                    // Make a simple GET request to the health check to establish the session/cookie
-                    await fetch('/api/health', { credentials: 'include' });
-                    // Wait a moment for the cookie to be processed by the browser
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                if (text.includes('Cookie check') || text.includes('redirectToReturnUrl') || text.includes('<!doctype html>')) {
+                    console.log(`[${new Date().toISOString()}] Cookie check detected, performing aggressive warmup...`);
+                    // Perform aggressive warmup
+                    await warmupConnection();
                     // Retry the original request
                     response = await makeRequest();
+                    
+                    // If it still returns HTML, try one more time after a longer wait
+                    const secondContentType = response.headers.get('content-type');
+                    if (response.ok && secondContentType && secondContentType.includes('text/html')) {
+                        console.log(`[${new Date().toISOString()}] Cookie check still present, waiting longer for second retry...`);
+                        await new Promise(resolve => setTimeout(resolve, 3000));
+                        response = await makeRequest();
+                    }
                 }
             }
 
@@ -837,8 +880,8 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 const text = await response.text();
                 console.error("Expected JSON but got:", contentType, text.substring(0, 500));
                 
-                if (text.includes('Cookie check') || text.includes('redirectToReturnUrl')) {
-                    throw new Error(`The platform is requesting a security check. Please try refreshing the page or interacting with the app first. (Cookie check intercepted)`);
+                if (text.includes('Cookie check') || text.includes('redirectToReturnUrl') || text.includes('<!doctype html>')) {
+                    throw new Error(`The platform is requesting a security check. Please try clicking the "Repair Connection" button in the sidebar or refreshing the page. (Cookie check intercepted)`);
                 }
                 
                 throw new Error(`Server returned an invalid response format (${contentType || 'unknown'}). This usually indicates a server-side error or misconfiguration.`);
@@ -1092,6 +1135,7 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
       saveFileToApp,
       deleteSavedFile,
       rehydrateAsset,
+      warmupConnection,
       isLoading,
       theme,
       toggleTheme

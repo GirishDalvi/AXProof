@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef } f
 import { AssetVersion, AssetType, Annotation, AnnotationType } from '../types';
 import { parseGIF, decompressFrames } from 'gifuct-js';
 import * as pdfjsLib from 'pdfjs-dist';
+import html2canvas from 'html2canvas';
 
 // Fix for different ESM loaders handling pdfjs-dist exports differently
 const pdfjs = (pdfjsLib as any).default || pdfjsLib;
@@ -549,6 +550,25 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
                      const localYPercent = (localY / height) * 100;
                      snapshotAnn.y = localYPercent;
                  }
+            } else if (currentType === AssetType.HTML && iframeRef.current) {
+                 const iframe = iframeRef.current;
+                 try {
+                     // Try to capture iframe content
+                     // This only works if it's same-origin (rehydrated blob URLs are same-origin)
+                     const canvas = await html2canvas(iframe.contentDocument!.body, {
+                         useCORS: true,
+                         allowTaint: true,
+                         backgroundColor: null,
+                         scale: 1 // Keep it 1:1 for simplicity
+                     });
+                     source = canvas;
+                     width = canvas.width;
+                     height = canvas.height;
+                 } catch (err) {
+                     console.error("HTML Snapshot failed", err);
+                     // Fallback: if we can't capture the iframe, we might have to skip or return null
+                     return null;
+                 }
             }
 
             if (!source || width === 0 || height === 0) return null;
@@ -560,15 +580,22 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
             ctx.drawImage(source, 0, 0, width, height);
 
             // Draw Annotation
-            ctx.strokeStyle = '#0ea5e9'; // brand-500
+            ctx.strokeStyle = '#FF6500'; // brand-500
             ctx.lineWidth = Math.max(4, width * 0.005);
-            ctx.fillStyle = '#0ea5e9';
+            ctx.fillStyle = '#FF6500';
 
             if (snapshotAnn.type === AnnotationType.BOX && snapshotAnn.width && snapshotAnn.height) {
                 const x = (snapshotAnn.x / 100) * width;
                 const y = (snapshotAnn.y / 100) * height;
                 const w = (snapshotAnn.width / 100) * width;
                 const h = (snapshotAnn.height / 100) * height;
+                
+                // Draw fill first with 50% opacity
+                ctx.fillStyle = 'rgba(255, 101, 0, 0.5)';
+                ctx.fillRect(x, y, w, h);
+                
+                // Draw stroke
+                ctx.strokeStyle = '#FF6500';
                 ctx.strokeRect(x, y, w, h);
                 
                 // Label
@@ -922,7 +949,7 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
                   {/* Drawing Preview Box */}
                   {isDrawing && startPos && currentPos && (
                     <div 
-                      className="absolute border-2 border-annotation bg-annotation/20 pointer-events-none z-30"
+                      className="absolute border-2 border-annotation bg-annotation/50 pointer-events-none z-30"
                       style={{
                         left: `${Math.min(startPos.x, currentPos.x)}%`,
                         top: `${Math.min(startPos.y, currentPos.y)}%`,

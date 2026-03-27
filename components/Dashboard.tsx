@@ -7,6 +7,49 @@ import { Link } from 'react-router-dom';
 import { UploadModal } from './UploadModal';
 import { AssetType, ProjectStatus } from '../types';
 
+const RepairButton: React.FC = () => {
+  const { warmupConnection } = useAXProof();
+  const [isRepairing, setIsRepairing] = useState(false);
+  const [repairStatus, setRepairStatus] = useState<'IDLE' | 'SUCCESS' | 'ERROR'>('IDLE');
+
+  const handleRepair = async () => {
+    setIsRepairing(true);
+    setRepairStatus('IDLE');
+    try {
+      await warmupConnection();
+      setRepairStatus('SUCCESS');
+      setTimeout(() => setRepairStatus('IDLE'), 3000);
+    } catch (e) {
+      setRepairStatus('ERROR');
+      setTimeout(() => setRepairStatus('IDLE'), 3000);
+    } finally {
+      setIsRepairing(false);
+    }
+  };
+
+  return (
+    <button 
+      onClick={handleRepair}
+      disabled={isRepairing}
+      className={`w-full flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+        repairStatus === 'SUCCESS' ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' :
+        repairStatus === 'ERROR' ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400' :
+        'text-text-secondary hover:bg-brand-50/50 dark:hover:bg-brand-900/10'
+      }`}
+      title="Fix 'Cookie check' or connection issues"
+    >
+      <div className={`${isRepairing ? 'animate-spin' : ''}`}>
+        <AlertCircle className="w-4 h-4" />
+      </div>
+      <span>
+        {isRepairing ? 'Repairing...' : 
+         repairStatus === 'SUCCESS' ? 'Connection Fixed' : 
+         repairStatus === 'ERROR' ? 'Repair Failed' : 'Repair Connection'}
+      </span>
+    </button>
+  );
+};
+
 export const Dashboard: React.FC = () => {
   const { projects, folders, savedFiles, deleteSavedFile, currentUser, updateProjectStatus, createFolder, deleteFolder, deleteProject, renameProject, moveProject, logout, theme, toggleTheme } = useAXProof();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -168,6 +211,10 @@ export const Dashboard: React.FC = () => {
                     <LogOut className="w-4 h-4" />
                     <span>Sign out</span>
                 </button>
+                
+                <div className="h-px bg-border-color my-1" />
+                
+                <RepairButton />
             </div>
         </div>
       </div>
