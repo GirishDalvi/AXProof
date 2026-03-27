@@ -254,7 +254,7 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
           setIsGifLoading(true);
           setGifError(null);
           
-          fetch(currentUrl)
+          fetch(currentUrl, { credentials: 'include' })
             .then(resp => {
                 if (!resp.ok) throw new Error("Network response was not ok");
                 return resp.arrayBuffer();
@@ -369,7 +369,10 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
           setPdfPages([]);
           pdfCanvasRefs.current = [];
           
-          const loadingTask = pdfjs.getDocument(currentUrl);
+          const loadingTask = pdfjs.getDocument({
+              url: currentUrl,
+              withCredentials: true
+          });
           loadingTask.promise.then(async (pdf: any) => {
               if (!isMounted) return;
               const pages = [];
@@ -919,7 +922,7 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
                   {/* Drawing Preview Box */}
                   {isDrawing && startPos && currentPos && (
                     <div 
-                      className="absolute border-2 border-brand-500 bg-brand-500/20 pointer-events-none z-30"
+                      className="absolute border-2 border-annotation bg-annotation/20 pointer-events-none z-30"
                       style={{
                         left: `${Math.min(startPos.x, currentPos.x)}%`,
                         top: `${Math.min(startPos.y, currentPos.y)}%`,
@@ -949,7 +952,7 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
                 {/* Drawing Preview Box */}
                 {isDrawing && startPos && currentPos && (
                   <div 
-                    className="absolute border-2 border-brand-500 bg-brand-500/20 pointer-events-none z-30"
+                    className="absolute border-2 border-annotation bg-annotation/20 pointer-events-none z-30"
                     style={{
                       left: `${Math.min(startPos.x, currentPos.x)}%`,
                       top: `${Math.min(startPos.y, currentPos.y)}%`,

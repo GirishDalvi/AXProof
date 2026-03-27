@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAXProof } from '../context/ZflowContext';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
-import { Clock, CheckCircle, AlertCircle, Plus, Search, FileVideo, FileImage, FileCode, Folder, FileText, ChevronDown, MoreVertical, Edit2, Trash2, FolderInput, FolderOpen, LayoutGrid, List, LogOut, Sun, Moon, FileDown } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, Plus, Search, FileVideo, FileImage, FileCode, Folder, FileText, ChevronDown, MoreVertical, Edit2, Trash2, FolderInput, FolderOpen, LayoutGrid, List, LogOut, Sun, Moon, FileDown, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { UploadModal } from './UploadModal';
 import { AssetType, ProjectStatus } from '../types';
@@ -152,18 +152,21 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="p-4 border-t border-border-color">
-            <div className="flex items-center gap-3">
-                <img src={currentUser.avatar} alt="" className="w-9 h-9 rounded-full bg-brand-50 dark:bg-brand-900/20" />
-                <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-text-primary truncate">{currentUser.name}</p>
-                    <p className="text-xs text-text-secondary truncate">Workspace Admin</p>
+            <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                    <img src={currentUser.avatar} alt="" className="w-9 h-9 rounded-full bg-brand-50 dark:bg-brand-900/20" />
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-text-primary truncate">{currentUser.name}</p>
+                        <p className="text-xs text-text-secondary truncate">Workspace Admin</p>
+                    </div>
                 </div>
                 <button 
                   onClick={logout} 
-                  className="p-2 text-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   title="Sign out"
                 >
-                    <LogOut className="w-5 h-5" />
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign out</span>
                 </button>
             </div>
         </div>
@@ -386,7 +389,30 @@ export const Dashboard: React.FC = () => {
                 </div>
             ) : (
                 /* Files List */
-                <div className="bg-surface rounded-xl shadow-sm border border-border-color overflow-hidden min-h-[400px] transition-colors">
+                <div className="space-y-6">
+                    {/* Google Drive Temporary Storage Info */}
+                    <div className="bg-brand-50/50 dark:bg-brand-900/10 border border-brand-200 dark:border-brand-800 rounded-xl p-4 flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-white dark:bg-surface rounded-lg flex items-center justify-center shadow-sm">
+                                <Globe className="w-6 h-6 text-brand-600" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-text-primary">Temporary Google Drive Storage</h4>
+                                <p className="text-sm text-text-secondary">Use this shared folder to temporarily save and share your review files.</p>
+                            </div>
+                        </div>
+                        <a 
+                            href="https://drive.google.com/drive/folders/1RWqqHe9-_am2IgZwFCmnyAj_zP76aFko?usp=sharing" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                        >
+                            <Button variant="outline" className="bg-white dark:bg-surface">
+                                <FolderOpen className="w-4 h-4 mr-2" /> Open Drive Folder
+                            </Button>
+                        </a>
+                    </div>
+
+                    <div className="bg-surface rounded-xl shadow-sm border border-border-color overflow-hidden min-h-[400px] transition-colors">
                     <div className="p-4 border-b border-border-color flex justify-between items-center gap-4">
                         <div className="relative flex-1 max-w-md">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
@@ -463,6 +489,7 @@ export const Dashboard: React.FC = () => {
                                 )}
                             </tbody>
                         </table>
+                    </div>
                     </div>
                 </div>
             )}

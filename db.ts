@@ -91,6 +91,10 @@ export const db = {
     const db = await initDB();
     return db.delete('assets', id);
   },
+  async deleteAnnotation(id: string) {
+    const db = await initDB();
+    return db.delete('annotations', id);
+  },
   async getFolders() {
     const db = await initDB();
     return db.getAll('folders');

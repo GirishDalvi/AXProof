@@ -141,19 +141,19 @@ export const CompareView: React.FC<CompareViewProps> = ({
 
         const isActive = activeAnnotationId === ann.id;
         const colorClass = isActive 
-            ? 'border-brand-500 bg-brand-500/30 z-30' 
-            : (ann.status === AnnotationStatus.RESOLVED ? 'border-green-400 bg-green-400/10 z-10' : 'border-brand-400 bg-brand-400/10 z-20');
+            ? 'border-annotation bg-annotation/50 z-30' 
+            : (ann.status === AnnotationStatus.RESOLVED ? 'border-green-400 bg-green-400/10 z-10' : 'border-annotation/80 bg-annotation/20 z-20');
         
         const pinColorClass = isActive
-            ? 'bg-brand-500 border-white text-white scale-110 z-30'
-            : (ann.status === AnnotationStatus.RESOLVED ? 'bg-green-500 border-white text-white z-10' : 'bg-brand-500 border-white text-white z-20');
+            ? 'bg-annotation border-white text-white scale-110 z-30'
+            : (ann.status === AnnotationStatus.RESOLVED ? 'bg-green-500 border-white text-white z-10' : 'bg-annotation border-white text-white z-20');
 
         if (ann.type === AnnotationType.BOX && ann.width && ann.height) {
            return (
                <div
                    key={ann.id}
                    onClick={(e) => { e.stopPropagation(); handleAnnotationClick(ann.id, side); }}
-                   className={`annotation-pin absolute border-2 cursor-pointer hover:border-brand-300 transition-all pointer-events-auto ${colorClass}`}
+                   className={`annotation-pin absolute border-2 cursor-pointer hover:border-annotation transition-all pointer-events-auto ${colorClass}`}
                    style={{ 
                        left: `${ann.x}%`, 
                        top: `${ann.y}%`, 

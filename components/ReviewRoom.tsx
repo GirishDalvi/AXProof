@@ -6,13 +6,13 @@ import { AnnotationSidebar } from './AnnotationSidebar';
 import { Button } from './ui/Button';
 import { CompareView } from './CompareView';
 import { Annotation, AnnotationStatus, AnnotationType, AssetFile, AssetType, Attachment } from '../types';
-import { ArrowLeft, Play, Pause, Layers, MousePointer2, BoxSelect, CheckCircle, Lock, AlertCircle, FileDown, GitBranch, Send, Upload, X, ZoomIn, ZoomOut, Maximize, FileText, Image as ImageIcon, FileCode, Film, Package, Globe, Link as LinkIcon, Clock, Hourglass, Loader2 } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Layers, MousePointer2, BoxSelect, CheckCircle, Lock, AlertCircle, FileDown, GitBranch, Send, Upload, X, ZoomIn, ZoomOut, Maximize, FileText, Image as ImageIcon, FileCode, Film, Package, Globe, Link as LinkIcon, Clock, Hourglass, Loader2, MoreVertical, Trash2, ExternalLink } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { db } from '../db';
 
 export const ReviewRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getProject, addAnnotation, annotations, approveVersion, requestChanges, markInReview, markWaitingForReview, uploadNewVersion, currentUser, saveFileToApp, rehydrateAsset } = useAXProof();
+  const { getProject, addAnnotation, annotations, approveVersion, requestChanges, markInReview, markWaitingForReview, uploadNewVersion, currentUser, saveFileToApp, rehydrateAsset, deleteProject } = useAXProof();
   
   const project = getProject(id || '');
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
@@ -42,6 +42,7 @@ export const ReviewRoom: React.FC = () => {
   // URL Update Modal State
   const [isUrlUpdateOpen, setIsUrlUpdateOpen] = useState(false);
   const [newUrlInput, setNewUrlInput] = useState('');
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<ReviewCanvasHandle>(null);
@@ -108,6 +109,13 @@ export const ReviewRoom: React.FC = () => {
         setActiveFile(null);
     }
   }, [currentVersionId, project]);
+
+  const handleDeleteProject = async () => {
+    if (confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)) {
+        await deleteProject(project.id);
+        window.location.href = '/';
+    }
+  };
 
   if (!project || !currentVersionId) return <div>Project not found</div>;
 
@@ -206,7 +214,7 @@ export const ReviewRoom: React.FC = () => {
             alert('File saved to your library!');
         } else {
             // If it's a remote URL or not in DB, fetch it
-            const response = await fetch(version.url);
+            const response = await fetch(version.url, { credentials: 'include' });
             const remoteBlob = await response.blob();
             await saveFileToApp(remoteBlob, version.fileName || `${project.name}_v${version.versionNumber}`);
             alert('File saved to your library!');
@@ -524,14 +532,14 @@ export const ReviewRoom: React.FC = () => {
                     </button>
                     <button 
                     onClick={() => setTool(AnnotationType.PIN)}
-                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === AnnotationType.PIN ? 'bg-surface shadow text-brand-600' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === AnnotationType.PIN ? 'bg-surface shadow text-annotation' : 'text-text-secondary hover:text-text-primary'}`}
                     title="Pin Tool"
                     >
                     <div className="w-4 h-4 rounded-full border-2 border-current flex items-center justify-center text-[8px] font-bold">1</div>
                     </button>
                     <button 
                     onClick={() => setTool(AnnotationType.BOX)}
-                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === AnnotationType.BOX ? 'bg-surface shadow text-brand-600' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === AnnotationType.BOX ? 'bg-surface shadow text-annotation' : 'text-text-secondary hover:text-text-primary'}`}
                     title="Box Tool"
                     >
                     <BoxSelect className="w-4 h-4" />
@@ -671,6 +679,39 @@ export const ReviewRoom: React.FC = () => {
                 </Button>
             </div>
           )}
+
+          {/* More Menu */}
+          <div className="relative">
+              <button 
+                onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                className="p-2 text-text-secondary hover:text-text-primary hover:bg-background rounded-lg transition-colors"
+                title="More Actions"
+              >
+                  <MoreVertical className="w-5 h-5" />
+              </button>
+              {isMoreMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsMoreMenuOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 bg-surface rounded-lg shadow-xl border border-border-color z-50 p-1 w-56 animate-in fade-in slide-in-from-top-1">
+                        <a 
+                            href="https://drive.google.com/drive/folders/1RWqqHe9-_am2IgZwFCmnyAj_zP76aFko?usp=sharing" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="w-full text-left px-3 py-2 text-sm text-text-primary hover:bg-background rounded flex items-center gap-2"
+                        >
+                            <ExternalLink className="w-4 h-4 text-brand-600" /> Save to Google Drive
+                        </a>
+                        <div className="h-px bg-border-color my-1" />
+                        <button 
+                            onClick={handleDeleteProject}
+                            className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded flex items-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" /> Delete Project
+                        </button>
+                    </div>
+                  </>
+              )}
+          </div>
         </div>
       </div>
 
@@ -761,7 +802,7 @@ export const ReviewRoom: React.FC = () => {
                             key={ann.id}
                             onClick={(e) => { e.stopPropagation(); handleAnnotationClick(ann.id); }}
                             className={`annotation-pin absolute border-2 z-20 transition-colors cursor-pointer flex items-start justify-start pointer-events-auto
-                              ${isActive ? 'border-brand-500 bg-brand-500/20' : 'border-brand-400 bg-brand-400/10 hover:border-brand-300'}
+                              ${isActive ? 'border-annotation bg-annotation/50' : 'border-annotation/80 bg-annotation/20 hover:border-annotation'}
                             `}
                             style={{ 
                                 left: `${ann.x}%`, 
@@ -770,7 +811,7 @@ export const ReviewRoom: React.FC = () => {
                                 height: `${ann.height}%` 
                             }}
                         >
-                            <span className={`flex items-center justify-center w-6 h-6 -mt-3 -ml-3 rounded-full text-xs font-bold shadow-sm ${isActive ? 'bg-brand-500 text-white' : 'bg-surface text-brand-600 border border-brand-200'}`}>
+                            <span className={`flex items-center justify-center w-6 h-6 -mt-3 -ml-3 rounded-full text-xs font-bold shadow-sm ${isActive ? 'bg-annotation text-white' : 'bg-surface text-annotation border border-annotation/20'}`}>
                                 {ann.pinNumber}
                             </span>
                         </div>
@@ -783,7 +824,7 @@ export const ReviewRoom: React.FC = () => {
                     key={ann.id}
                     onClick={(e) => { e.stopPropagation(); handleAnnotationClick(ann.id); }}
                     className={`annotation-pin absolute transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full border-2 shadow-lg cursor-pointer transition-transform hover:scale-110 z-20 pointer-events-auto
-                      ${isActive ? 'bg-brand-500 border-white text-white scale-110' : 'bg-surface border-brand-500 text-brand-600'}
+                      ${isActive ? 'bg-annotation border-white text-white scale-110' : 'bg-surface border-annotation text-annotation'}
                     `}
                     style={{ left: `${ann.x}%`, top: `${ann.y}%` }}
                   >
@@ -797,7 +838,7 @@ export const ReviewRoom: React.FC = () => {
                  <>
                    {tempAnnotation.type === AnnotationType.BOX && tempAnnotation.width && tempAnnotation.height ? (
                       <div
-                        className="absolute border-2 border-brand-500 bg-brand-500/30 z-30 animate-pulse"
+                        className="absolute border-2 border-annotation bg-annotation/50 z-30 animate-pulse"
                         style={{ 
                             left: `${tempAnnotation.x}%`, 
                             top: `${tempAnnotation.y}%`, 
@@ -805,13 +846,13 @@ export const ReviewRoom: React.FC = () => {
                             height: `${tempAnnotation.height}%` 
                         }}
                       >
-                         <div className="absolute -top-3 -left-3 w-6 h-6 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs font-bold">
+                         <div className="absolute -top-3 -left-3 w-6 h-6 rounded-full bg-annotation text-white flex items-center justify-center text-xs font-bold">
                             {currentAnnotations.length + 1}
                          </div>
                       </div>
                    ) : (
                     <div
-                        className="absolute transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-brand-500 text-white border-2 border-white shadow-lg z-30 animate-pulse"
+                        className="absolute transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-annotation text-white border-2 border-white shadow-lg z-30 animate-pulse"
                         style={{ left: `${tempAnnotation.x}%`, top: `${tempAnnotation.y}%` }}
                     >
                         <span className="font-bold text-xs">{currentAnnotations.length + 1}</span>

@@ -102,6 +102,9 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const loadData = async () => {
       try {
+        // Warm up the connection to establish cookies and avoid "Cookie check" interceptions
+        fetch('/api/health', { credentials: 'include' }).catch(() => {});
+
         let loadedProjects = await db.getProjects();
         let loadedAnnotations = await db.getAnnotations();
         let loadedFolders = await db.getFolders();
@@ -301,10 +304,37 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
-  const deleteProject = (id: string) => {
+  const deleteProject = async (id: string) => {
+    const projectToDelete = projects.find(p => p.id === id);
+    if (!projectToDelete) return;
+
     setProjects(prev => prev.filter(p => p.id !== id));
-    db.deleteProject(id);
-    // Note: In a production app, we should also delete annotations and asset blobs.
+    await db.deleteProject(id);
+
+    // Clean up annotations and assets for all versions
+    for (const v of projectToDelete.versions) {
+        // Delete annotations from state
+        setAnnotations(prev => {
+            const newMap = { ...prev };
+            delete newMap[v.id];
+            return newMap;
+        });
+
+        // Delete annotations from DB
+        const versionAnns = annotations[v.id] || [];
+        for (const ann of versionAnns) {
+            await db.deleteAnnotation(ann.id);
+            // Also delete attachment assets if any
+            if (ann.attachments) {
+                for (const att of ann.attachments) {
+                    await db.deleteAsset(att.id);
+                }
+            }
+        }
+
+        // Delete asset blob from DB
+        await db.deleteAsset(v.id);
+    }
   };
 
   const renameProject = (id: string, name: string) => {
@@ -744,19 +774,38 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
             formData.append('file', file, name);
             formData.append('id', extractId);
 
-            const apiBaseUrl = window.location.origin;
-            const uploadUrl = `${apiBaseUrl}/api/upload-zip`;
-
-            console.log(`[${new Date().toISOString()}] Initiating ZIP upload to ${uploadUrl}`, {
+            console.log(`[${new Date().toISOString()}] Initiating ZIP upload to /api/upload-zip`, {
                 name,
                 size: file.size,
                 extractId
             });
 
-            const response = await fetch(uploadUrl, {
-                method: 'POST',
-                body: formData
-            });
+            // Helper to make the actual request
+            const makeRequest = async () => {
+                return await fetch('/api/upload-zip', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include' // Ensure cookies are sent
+                });
+            };
+
+            let response = await makeRequest();
+
+            // Check for "Cookie check" interception (common in some proxied environments)
+            // This happens when the proxy returns a 200 OK but with HTML content instead of JSON
+            const initialContentType = response.headers.get('content-type');
+            if (response.ok && initialContentType && initialContentType.includes('text/html')) {
+                const text = await response.clone().text();
+                if (text.includes('Cookie check') || text.includes('redirectToReturnUrl')) {
+                    console.log(`[${new Date().toISOString()}] Cookie check detected, warming up connection...`);
+                    // Make a simple GET request to the health check to establish the session/cookie
+                    await fetch('/api/health', { credentials: 'include' });
+                    // Wait a moment for the cookie to be processed by the browser
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    // Retry the original request
+                    response = await makeRequest();
+                }
+            }
 
             console.log(`[${new Date().toISOString()}] ZIP upload response status: ${response.status} ${response.statusText}`);
             const contentType = response.headers.get('content-type');

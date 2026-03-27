@@ -231,14 +231,14 @@ export const AnnotationSidebar: React.FC<AnnotationSidebarProps> = ({
             onClick={() => onAnnotationClick(ann.id)}
             className={`
               border rounded-lg p-3 transition-all cursor-pointer relative
-              ${activeAnnotationId === ann.id ? 'border-brand-500 ring-1 ring-brand-500 bg-brand-50/30' : 'border-border-color hover:border-brand-300 hover:bg-background'}
+              ${activeAnnotationId === ann.id ? 'border-annotation ring-1 ring-annotation bg-annotation/10' : 'border-border-color hover:border-annotation/50 hover:bg-background'}
               ${ann.status === AnnotationStatus.RESOLVED ? 'opacity-75' : ''}
               ${carriedOver ? 'bg-background/80' : ''}
             `}
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-bold">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-annotation text-white text-xs font-bold">
                   {ann.pinNumber}
                 </span>
                 <span className="font-medium text-sm text-text-primary">{authorName}</span>
