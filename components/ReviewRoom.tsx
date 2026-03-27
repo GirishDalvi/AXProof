@@ -441,29 +441,29 @@ export const ReviewRoom: React.FC = () => {
   const isLiveUrl = version.assetType === AssetType.HTML && !version.url.startsWith('blob:');
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 relative">
+    <div className="flex flex-col h-screen bg-background relative">
       {/* Loading Overlay for Export */}
       {isExporting && (
-          <div className="absolute inset-0 z-[100] bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center text-white">
+          <div className="absolute inset-0 z-[100] bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center text-text-primary">
               <Loader2 className="w-12 h-12 animate-spin mb-4 text-brand-500" />
               <h3 className="text-xl font-bold">Generating PDF Report...</h3>
-              <p className="text-gray-300 mt-2">Capturing screenshots and compiling data.</p>
-              <p className="text-sm text-gray-400 mt-1">Please wait.</p>
+              <p className="text-text-secondary mt-2">Capturing screenshots and compiling data.</p>
+              <p className="text-sm text-text-secondary mt-1">Please wait.</p>
           </div>
       )}
 
       {/* Top Bar */}
-      <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shrink-0 z-10">
+      <div className="h-16 bg-surface border-b border-border-color flex items-center justify-between px-4 shrink-0 z-10">
         <div className="flex items-center gap-4">
-          <Link to="/" className="text-gray-500 hover:text-gray-700">
+          <Link to="/" className="text-text-secondary hover:text-text-primary">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="font-semibold text-gray-900 flex items-center gap-2">
+            <h1 className="font-semibold text-text-primary flex items-center gap-2">
                 {project.name}
                 {version.files && version.files.length > 0 && (
                   <span title="Package/ZIP" className="flex items-center">
-                    <Package className="w-4 h-4 text-gray-400" />
+                    <Package className="w-4 h-4 text-text-secondary" />
                   </span>
                 )}
                 {isLiveUrl && (
@@ -488,21 +488,21 @@ export const ReviewRoom: React.FC = () => {
                 )}
                 {/* Show Revision Indicator for new versions */}
                 {!isLocked && previousVersion && (
-                     <span className="bg-blue-50 text-blue-600 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 border border-blue-100">
+                     <span className="bg-brand-50 text-brand-600 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 border border-brand-100">
                         <GitBranch className="w-3 h-3" /> Revision of v{previousVersion.versionNumber}
                      </span>
                 )}
             </h1>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-text-secondary">
               <span>{project.clientName}</span>
-              <span className="w-1 h-1 rounded-full bg-gray-300" />
+              <span className="w-1 h-1 rounded-full bg-border-color" />
               <select 
                 value={currentVersionId || ''}
                 onChange={(e) => setCurrentVersionId(e.target.value)}
-                className="bg-transparent border-none p-0 text-gray-700 font-medium focus:ring-0 cursor-pointer"
+                className="bg-transparent border-none p-0 text-text-primary font-medium focus:ring-0 cursor-pointer"
               >
                 {project.versions.map(v => (
-                  <option key={v.id} value={v.id}>
+                  <option key={v.id} value={v.id} className="bg-surface">
                     v{v.versionNumber} {v.status === 'APPROVED' ? '(Approved)' : v.status === 'CHANGES_REQUIRED' ? '(Changes Req.)' : v.status === 'WAITING_FOR_REVIEW' ? '(Waiting)' : '(In Review)'}
                   </option>
                 ))}
@@ -514,61 +514,54 @@ export const ReviewRoom: React.FC = () => {
         {/* Toolbar - Center */}
         <div className="flex items-center gap-2">
             {!isLocked ? (
-                <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
+                <div className="flex items-center bg-background rounded-lg p-1 border border-border-color">
                     <button 
                     onClick={() => setTool('INTERACT')}
-                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === 'INTERACT' ? 'bg-white shadow text-brand-600' : 'text-gray-500 hover:text-gray-900'}`}
+                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === 'INTERACT' ? 'bg-surface shadow text-brand-600' : 'text-text-secondary hover:text-text-primary'}`}
                     title="Interact Tool"
                     >
                     <MousePointer2 className="w-4 h-4" />
                     </button>
                     <button 
                     onClick={() => setTool(AnnotationType.PIN)}
-                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === AnnotationType.PIN ? 'bg-white shadow text-brand-600' : 'text-gray-500 hover:text-gray-900'}`}
+                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === AnnotationType.PIN ? 'bg-surface shadow text-brand-600' : 'text-text-secondary hover:text-text-primary'}`}
                     title="Pin Tool"
                     >
                     <div className="w-4 h-4 rounded-full border-2 border-current flex items-center justify-center text-[8px] font-bold">1</div>
                     </button>
                     <button 
                     onClick={() => setTool(AnnotationType.BOX)}
-                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === AnnotationType.BOX ? 'bg-white shadow text-brand-600' : 'text-gray-500 hover:text-gray-900'}`}
+                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === AnnotationType.BOX ? 'bg-surface shadow text-brand-600' : 'text-text-secondary hover:text-text-primary'}`}
                     title="Box Tool"
                     >
                     <BoxSelect className="w-4 h-4" />
                     </button>
                 </div>
             ) : (
-                <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200">
+                <div className="flex items-center gap-2 text-sm text-text-secondary bg-background px-3 py-1.5 rounded-md border border-border-color">
                     <Lock className="w-4 h-4" /> Locked
                 </div>
             )}
 
             {/* Zoom Controls */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
-                <button onClick={handleZoomOut} className="p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-white transition-colors" title="Zoom Out">
+            <div className="flex items-center bg-background rounded-lg p-1 border border-border-color">
+                <button onClick={handleZoomOut} className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Zoom Out">
                     <ZoomOut className="w-4 h-4" />
                 </button>
-                <span className="text-xs font-mono w-10 text-center text-gray-600">{Math.round(zoom * 100)}%</span>
-                <button onClick={handleZoomIn} className="p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-white transition-colors" title="Zoom In">
+                <span className="text-xs font-mono w-10 text-center text-text-primary">{Math.round(zoom * 100)}%</span>
+                <button onClick={handleZoomIn} className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Zoom In">
                     <ZoomIn className="w-4 h-4" />
                 </button>
-                <button onClick={handleZoomReset} className="p-1.5 rounded-md text-gray-500 hover:text-gray-900 hover:bg-white transition-colors" title="Reset Zoom">
+                <button onClick={handleZoomReset} className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Reset Zoom">
                     <Maximize className="w-3 h-3" />
                 </button>
             </div>
 
             {/* Annotation Toggle */}
-            <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
+            <div className="flex items-center bg-background rounded-lg p-1 border border-border-color">
                 <button 
-                  onClick={() => {
-                    const newValue = !showAnnotations;
-                    setShowAnnotations(newValue);
-                    // If it's an HTML asset, sync the live overlay state with the main annotation state
-                    if (currentAssetType === AssetType.HTML) {
-                      setShowLiveOverlay(newValue);
-                    }
-                  }} 
-                  className={`p-1.5 rounded-md transition-colors ${showAnnotations ? 'bg-white shadow text-brand-600' : 'text-gray-500 hover:text-gray-900 hover:bg-white'}`} 
+                  onClick={() => setShowAnnotations(!showAnnotations)} 
+                  className={`p-1.5 rounded-md transition-colors ${showAnnotations ? 'bg-surface shadow text-brand-600' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} 
                   title={showAnnotations ? "Hide Annotations" : "Show Annotations"}
                 >
                     <Layers className="w-4 h-4" />
@@ -591,7 +584,7 @@ export const ReviewRoom: React.FC = () => {
              <Button 
               variant="ghost" 
               size="sm" 
-              className="text-gray-500 hover:text-brand-600"
+              className="text-text-secondary hover:text-brand-600"
               title="Upload a new version"
               onClick={handleNewVersionClick}
              >
@@ -601,11 +594,11 @@ export const ReviewRoom: React.FC = () => {
 
             {/* Playback Controls */}
            {hasTimeline && (
-              <div className="flex items-center gap-4 mr-4 bg-gray-100 rounded-full px-4 py-1">
-                <button onClick={() => setIsPlaying(!isPlaying)} className="hover:text-brand-600">
+              <div className="flex items-center gap-4 mr-4 bg-background rounded-full px-4 py-1">
+                <button onClick={() => setIsPlaying(!isPlaying)} className="hover:text-brand-600 text-text-primary">
                   {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                 </button>
-                <span className="text-xs font-mono w-24 text-center">
+                <span className="text-xs font-mono w-24 text-center text-text-primary">
                   {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
               </div>
@@ -619,23 +612,23 @@ export const ReviewRoom: React.FC = () => {
              <div className="flex items-center gap-2">
                  <div className="flex flex-col items-end mr-2">
                     <span className="text-xs font-bold text-green-700 uppercase tracking-wide">Approved</span>
-                    <span className="text-[10px] text-gray-500">by {version.approvedBy || 'Admin'}</span>
+                    <span className="text-[10px] text-text-secondary">by {version.approvedBy || 'Admin'}</span>
                  </div>
                  <div className="relative group/export">
                      <Button variant="outline" size="sm" onClick={() => handleExport(false)} disabled={isExporting}>
                          {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
                          Export
                      </Button>
-                     <div className="absolute right-0 top-full mt-1 hidden group-hover/export:block bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 p-1 w-48">
+                     <div className="absolute right-0 top-full mt-1 hidden group-hover/export:block bg-surface rounded-lg shadow-xl border border-border-color z-50 p-1 w-48">
                          <button 
                              onClick={() => handleExport(true)}
-                             className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded flex items-center gap-2"
+                             className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-background rounded flex items-center gap-2"
                          >
                              <FileText className="w-3 h-3" /> Save Report to App
                          </button>
                          <button 
                              onClick={handleSaveToApp}
-                             className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded flex items-center gap-2"
+                             className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-background rounded flex items-center gap-2"
                          >
                              <Package className="w-3 h-3" /> Save Original to App
                          </button>
@@ -646,7 +639,7 @@ export const ReviewRoom: React.FC = () => {
             <div className="flex items-center gap-3">
                  <div className="flex flex-col items-end mr-2">
                     <span className="text-xs font-bold text-orange-700 uppercase tracking-wide">Changes Required</span>
-                    <span className="text-[10px] text-gray-500">by {version.changesRequestedBy || 'Reviewer'}</span>
+                    <span className="text-[10px] text-text-secondary">by {version.changesRequestedBy || 'Reviewer'}</span>
                  </div>
                  <Button variant="primary" size="sm" onClick={handleNewVersionClick}>
                     <Upload className="w-4 h-4 mr-2" /> Submit Revision
@@ -658,16 +651,16 @@ export const ReviewRoom: React.FC = () => {
                      <Button variant="outline" size="sm" onClick={() => handleExport(false)} disabled={isExporting} title="Export Report">
                          {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
                      </Button>
-                     <div className="absolute right-0 top-full mt-1 hidden group-hover/export:block bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-50 p-1 w-48">
+                     <div className="absolute right-0 top-full mt-1 hidden group-hover/export:block bg-surface rounded-lg shadow-xl border border-border-color z-50 p-1 w-48">
                          <button 
                              onClick={() => handleExport(true)}
-                             className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded flex items-center gap-2"
+                             className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-background rounded flex items-center gap-2"
                          >
                              <FileText className="w-3 h-3" /> Save Report to App
                          </button>
                          <button 
                              onClick={handleSaveToApp}
-                             className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded flex items-center gap-2"
+                             className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-background rounded flex items-center gap-2"
                          >
                              <Package className="w-3 h-3" /> Save Original to App
                          </button>
@@ -686,9 +679,9 @@ export const ReviewRoom: React.FC = () => {
         
         {/* Files Sidebar (if ZIP/Multi-file) */}
         {version.files && version.files.length > 0 && (
-            <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col shrink-0">
-                <div className="p-4 border-b border-gray-200">
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">Package Contents</h3>
+            <div className="w-64 bg-background border-r border-border-color flex flex-col shrink-0">
+                <div className="p-4 border-b border-border-color">
+                    <h3 className="text-xs font-bold text-text-secondary uppercase tracking-wide">Package Contents</h3>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     {version.files.map((file, idx) => {
@@ -697,16 +690,16 @@ export const ReviewRoom: React.FC = () => {
                             <button
                                 key={idx}
                                 onClick={() => { setActiveFile(file); setCurrentTime(0); }}
-                                className={`w-full text-left px-4 py-3 text-sm flex items-center justify-between hover:bg-white border-b border-gray-100 transition-colors
-                                    ${activeFile?.path === file.path ? 'bg-white border-l-4 border-l-brand-500 text-brand-700 font-medium shadow-sm' : 'text-gray-600 border-l-4 border-l-transparent'}
+                                className={`w-full text-left px-4 py-3 text-sm flex items-center justify-between hover:bg-surface border-b border-border-color transition-colors
+                                    ${activeFile?.path === file.path ? 'bg-surface border-l-4 border-l-brand-500 text-brand-700 font-medium shadow-sm' : 'text-text-secondary border-l-4 border-l-transparent'}
                                 `}
                             >
                                 <div className="flex items-center gap-2 overflow-hidden">
-                                    <span className="shrink-0 text-gray-400">{getFileIcon(file.type)}</span>
+                                    <span className="shrink-0 text-text-secondary">{getFileIcon(file.type)}</span>
                                     <span className="truncate">{file.name}</span>
                                 </div>
                                 {fileAnns > 0 && (
-                                    <span className="bg-gray-200 text-gray-600 text-xs px-1.5 rounded-full">{fileAnns}</span>
+                                    <span className="bg-background text-text-secondary text-xs px-1.5 rounded-full">{fileAnns}</span>
                                 )}
                             </button>
                         );
@@ -717,14 +710,14 @@ export const ReviewRoom: React.FC = () => {
 
         {/* Canvas Area */}
         <div className="flex-1 relative flex flex-col">
-          <div className="flex-1 relative bg-gray-900 overflow-hidden">
+          <div className="flex-1 relative bg-background overflow-hidden">
             {(isRehydrating || rehydrationError) && (
-                <div className="absolute inset-0 z-50 bg-gray-900/80 backdrop-blur-sm flex flex-col items-center justify-center text-white p-6 text-center">
+                <div className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center text-text-primary p-6 text-center">
                     {rehydrationError ? (
                         <>
                             <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
                             <h3 className="text-lg font-medium text-red-400">Rehydration Failed</h3>
-                            <p className="text-gray-300 text-sm mt-2 max-w-md">{rehydrationError}</p>
+                            <p className="text-text-secondary text-sm mt-2 max-w-md">{rehydrationError}</p>
                             <Button variant="primary" className="mt-6" onClick={handleRetryRehydration}>
                                 <Upload className="w-4 h-4 mr-2" /> Retry Rehydration
                             </Button>
@@ -733,7 +726,7 @@ export const ReviewRoom: React.FC = () => {
                         <>
                             <Loader2 className="w-12 h-12 text-brand-500 animate-spin mb-4" />
                             <h3 className="text-lg font-medium">Rehydrating Asset...</h3>
-                            <p className="text-gray-400 text-sm mt-2">Preparing the creative for review. This may take a moment for larger packages.</p>
+                            <p className="text-text-secondary text-sm mt-2">Preparing the creative for review. This may take a moment for larger packages.</p>
                         </>
                     )}
                 </div>
@@ -751,7 +744,6 @@ export const ReviewRoom: React.FC = () => {
               readOnly={isLocked}
               zoom={zoom}
               showAnnotations={showAnnotations}
-              showLiveOverlay={showLiveOverlay}
               activeAssetUrl={activeFile?.url}
               activeAssetType={activeFile?.type}
             >
@@ -778,7 +770,7 @@ export const ReviewRoom: React.FC = () => {
                                 height: `${ann.height}%` 
                             }}
                         >
-                            <span className={`flex items-center justify-center w-6 h-6 -mt-3 -ml-3 rounded-full text-xs font-bold shadow-sm ${isActive ? 'bg-brand-500 text-white' : 'bg-white text-brand-600 border border-brand-200'}`}>
+                            <span className={`flex items-center justify-center w-6 h-6 -mt-3 -ml-3 rounded-full text-xs font-bold shadow-sm ${isActive ? 'bg-brand-500 text-white' : 'bg-surface text-brand-600 border border-brand-200'}`}>
                                 {ann.pinNumber}
                             </span>
                         </div>
@@ -791,7 +783,7 @@ export const ReviewRoom: React.FC = () => {
                     key={ann.id}
                     onClick={(e) => { e.stopPropagation(); handleAnnotationClick(ann.id); }}
                     className={`annotation-pin absolute transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full border-2 shadow-lg cursor-pointer transition-transform hover:scale-110 z-20 pointer-events-auto
-                      ${isActive ? 'bg-brand-500 border-white text-white scale-110' : 'bg-white border-brand-500 text-brand-600'}
+                      ${isActive ? 'bg-brand-500 border-white text-white scale-110' : 'bg-surface border-brand-500 text-brand-600'}
                     `}
                     style={{ left: `${ann.x}%`, top: `${ann.y}%` }}
                   >
@@ -832,7 +824,7 @@ export const ReviewRoom: React.FC = () => {
           
           {/* Timeline Bar (Bottom of canvas) */}
           {hasTimeline && (
-             <div className="h-12 bg-gray-800 border-t border-gray-700 flex items-center px-4 relative group">
+             <div className="h-12 bg-background border-t border-border-color flex items-center px-4 relative group">
                 <div className="absolute top-0 left-0 right-0 h-1 z-10 pointer-events-none">
                     {currentAnnotations.map(ann => (
                       <div 
@@ -854,7 +846,7 @@ export const ReviewRoom: React.FC = () => {
                     setCurrentTime(t);
                     setIsPlaying(false);
                   }}
-                  className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
+                  className="w-full h-1 bg-border-color rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-brand-500 [&::-webkit-slider-thumb]:rounded-full"
                 />
              </div>
           )}
@@ -876,14 +868,14 @@ export const ReviewRoom: React.FC = () => {
       {/* Submit Review Modal */}
       {isSubmitModalOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-3xl border border-gray-200">
+            <div className="bg-surface rounded-xl shadow-2xl p-6 w-full max-w-3xl border border-border-color">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">Submit Review</h3>
-                    <button onClick={() => setIsSubmitModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                    <h3 className="text-lg font-bold text-text-primary">Submit Review</h3>
+                    <button onClick={() => setIsSubmitModalOpen(false)} className="text-text-secondary hover:text-text-primary">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
-                <p className="text-gray-600 text-sm mb-6">
+                <p className="text-text-secondary text-sm mb-6">
                     You are about to complete your review for <b>v{version.versionNumber}</b>. 
                     Select the outcome below.
                 </p>
@@ -929,25 +921,25 @@ export const ReviewRoom: React.FC = () => {
       {/* URL Update Modal */}
       {isUrlUpdateOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in">
-             <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
-                <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                     <h3 className="font-semibold text-gray-900">Update Website URL</h3>
-                     <button onClick={() => setIsUrlUpdateOpen(false)} className="text-gray-400 hover:text-gray-600">
+             <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+                <div className="p-4 border-b border-border-color flex justify-between items-center bg-background">
+                     <h3 className="font-semibold text-text-primary">Update Website URL</h3>
+                     <button onClick={() => setIsUrlUpdateOpen(false)} className="text-text-secondary hover:text-text-primary">
                         <X className="w-5 h-5" />
                      </button>
                 </div>
                 <form onSubmit={submitUrlVersion} className="p-6">
                     <div className="mb-4">
-                        <label className="text-sm font-medium text-gray-700 block mb-2">New Version URL</label>
+                        <label className="text-sm font-medium text-text-primary block mb-2">New Version URL</label>
                         <div className="relative">
-                            <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
                             <input 
                                 type="url" 
                                 required
                                 autoFocus
                                 value={newUrlInput}
                                 onChange={(e) => setNewUrlInput(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-gray-700 text-[#FFFFFF]"
+                                className="w-full pl-9 pr-4 py-2 border border-border-color rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-surface text-text-primary"
                                 placeholder="https://example.com/v2"
                             />
                         </div>

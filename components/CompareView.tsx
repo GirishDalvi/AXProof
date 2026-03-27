@@ -181,35 +181,35 @@ export const CompareView: React.FC<CompareViewProps> = ({
 
   return (
     <div 
-        className="fixed inset-0 z-50 bg-gray-900 flex flex-col"
+        className="fixed inset-0 z-50 bg-background flex flex-col"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
     >
       {/* Compare Header */}
-      <div className="h-14 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4 text-white shrink-0">
+      <div className="h-14 bg-surface border-b border-border-color flex items-center justify-between px-4 text-text-primary shrink-0">
         <div className="flex items-center gap-4">
             <span className="font-semibold text-lg hidden md:block">Compare Mode</span>
             
             {/* Version Selectors */}
-            <div className="flex items-center gap-2 bg-gray-700 rounded-lg p-1">
+            <div className="flex items-center gap-2 bg-background rounded-lg p-1">
                 <select 
                     value={leftId} 
                     onChange={(e) => setLeftId(e.target.value)}
-                    className="bg-transparent text-sm border-none focus:ring-0 cursor-pointer text-gray-200 max-w-[120px]"
+                    className="bg-transparent text-sm border-none focus:ring-0 cursor-pointer text-text-primary max-w-[120px]"
                 >
                     {projectVersions.map(v => (
-                        <option key={v.id} value={v.id} className="text-black">v{v.versionNumber}</option>
+                        <option key={v.id} value={v.id} className="text-text-primary bg-surface">v{v.versionNumber}</option>
                     ))}
                 </select>
-                <span className="text-gray-500 text-xs font-bold">VS</span>
+                <span className="text-text-secondary text-xs font-bold">VS</span>
                 <select 
                     value={rightId} 
                     onChange={(e) => setRightId(e.target.value)}
-                    className="bg-transparent text-sm border-none focus:ring-0 cursor-pointer text-gray-200 max-w-[120px]"
+                    className="bg-transparent text-sm border-none focus:ring-0 cursor-pointer text-text-primary max-w-[120px]"
                 >
                     {projectVersions.map(v => (
-                        <option key={v.id} value={v.id} className="text-black">v{v.versionNumber}</option>
+                        <option key={v.id} value={v.id} className="text-text-primary bg-surface">v{v.versionNumber}</option>
                     ))}
                 </select>
             </div>
@@ -219,31 +219,31 @@ export const CompareView: React.FC<CompareViewProps> = ({
         <div className="flex items-center gap-3">
              {/* Playback */}
             {(leftVersion.assetType === 'VIDEO' || rightVersion.assetType === 'VIDEO') && (
-                <div className="flex items-center gap-2 mr-4 bg-gray-700 rounded-lg p-1">
+                <div className="flex items-center gap-2 mr-4 bg-background rounded-lg p-1">
                      <button 
                         onClick={() => setIsPlaying(!isPlaying)} 
                         className="p-1.5 rounded bg-brand-600 hover:bg-brand-500 text-white"
                      >
                         {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                      </button>
-                     <span className="text-xs font-mono w-16 text-center">
+                     <span className="text-xs font-mono w-16 text-center text-text-primary">
                          {formatTime(currentTime)}
                      </span>
                 </div>
             )}
 
              {/* Tools */}
-             <div className="flex items-center bg-gray-700 rounded-lg p-1">
+             <div className="flex items-center bg-background rounded-lg p-1">
                  <button 
                     onClick={() => setTool('POINTER')}
-                    className={`p-1.5 rounded transition-colors ${tool === 'POINTER' ? 'bg-gray-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+                    className={`p-1.5 rounded transition-colors ${tool === 'POINTER' ? 'bg-surface text-brand-500 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
                     title="Pointer"
                  >
                      <MousePointer2 className="w-4 h-4" />
                  </button>
                  <button 
                     onClick={() => setTool('PAN')}
-                    className={`p-1.5 rounded transition-colors ${tool === 'PAN' ? 'bg-gray-600 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+                    className={`p-1.5 rounded transition-colors ${tool === 'PAN' ? 'bg-surface text-brand-500 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
                     title="Hand Tool"
                  >
                      <Hand className="w-4 h-4" />
@@ -251,11 +251,11 @@ export const CompareView: React.FC<CompareViewProps> = ({
              </div>
 
              {/* Zoom */}
-             <div className="flex items-center bg-gray-700 rounded-lg p-1">
-                <button onClick={handleZoomOut} className="p-1.5 rounded text-gray-400 hover:text-gray-200"><ZoomOut className="w-4 h-4" /></button>
-                <span className="text-xs font-mono w-10 text-center">{Math.round(zoom * 100)}%</span>
-                <button onClick={handleZoomIn} className="p-1.5 rounded text-gray-400 hover:text-gray-200"><ZoomIn className="w-4 h-4" /></button>
-                <button onClick={handleZoomReset} className="p-1.5 rounded text-gray-400 hover:text-gray-200"><Maximize className="w-3 h-3" /></button>
+             <div className="flex items-center bg-background rounded-lg p-1">
+                <button onClick={handleZoomOut} className="p-1.5 rounded text-text-secondary hover:text-text-primary"><ZoomOut className="w-4 h-4" /></button>
+                <span className="text-xs font-mono w-10 text-center text-text-primary">{Math.round(zoom * 100)}%</span>
+                <button onClick={handleZoomIn} className="p-1.5 rounded text-text-secondary hover:text-text-primary"><ZoomIn className="w-4 h-4" /></button>
+                <button onClick={handleZoomReset} className="p-1.5 rounded text-text-secondary hover:text-text-primary"><Maximize className="w-3 h-3" /></button>
             </div>
         </div>
 
@@ -278,7 +278,7 @@ export const CompareView: React.FC<CompareViewProps> = ({
                 {isRightSidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
             </Button>
 
-            <div className="h-6 w-px bg-gray-600 mx-2" />
+            <div className="h-6 w-px bg-border-color mx-2" />
 
             <Button variant="secondary" size="sm" onClick={onClose}>
                 <X className="w-4 h-4 mr-2" /> Exit
@@ -291,8 +291,8 @@ export const CompareView: React.FC<CompareViewProps> = ({
         
         {/* Left Sidebar */}
         {isLeftSidebarOpen && (
-             <div className="w-80 bg-white border-r border-gray-200 flex flex-col shrink-0 animate-in slide-in-from-left-10 duration-200 z-10">
-                <div className="p-3 bg-gray-50 border-b border-gray-200 font-medium text-sm text-center">
+             <div className="w-80 bg-surface border-r border-border-color flex flex-col shrink-0 animate-in slide-in-from-left-10 duration-200 z-10">
+                <div className="p-3 bg-background border-b border-border-color font-medium text-sm text-center text-text-primary">
                    Version {leftVersion.versionNumber} Comments
                 </div>
                 <div className="flex-1 overflow-hidden relative">
@@ -318,11 +318,11 @@ export const CompareView: React.FC<CompareViewProps> = ({
         >
             <div className="flex-1 flex overflow-hidden">
                 {/* Left Pane */}
-                <div className="flex-1 border-r border-gray-700 relative flex flex-col">
+                <div className="flex-1 border-r border-border-color relative flex flex-col">
                     <div className="absolute top-4 left-4 z-10 bg-black/50 text-white px-2 py-1 rounded text-xs backdrop-blur-sm pointer-events-none">
                         Version {leftVersion.versionNumber}
                     </div>
-                    <div className="flex-1 relative bg-black">
+                    <div className="flex-1 relative bg-background">
                         <ReviewCanvas
                             scrollRef={leftScrollRef}
                             className={tool === 'PAN' ? 'cursor-grab active:cursor-grabbing' : ''}
@@ -355,7 +355,7 @@ export const CompareView: React.FC<CompareViewProps> = ({
                     <div className="absolute top-4 left-4 z-10 bg-black/50 text-white px-2 py-1 rounded text-xs backdrop-blur-sm pointer-events-none">
                         Version {rightVersion.versionNumber}
                     </div>
-                    <div className="flex-1 relative bg-black">
+                    <div className="flex-1 relative bg-background">
                         <ReviewCanvas
                             scrollRef={rightScrollRef}
                             className={tool === 'PAN' ? 'cursor-grab active:cursor-grabbing' : ''}
@@ -378,8 +378,8 @@ export const CompareView: React.FC<CompareViewProps> = ({
 
         {/* Right Sidebar */}
         {isRightSidebarOpen && (
-             <div className="w-80 bg-white border-l border-gray-200 flex flex-col shrink-0 animate-in slide-in-from-right-10 duration-200 z-10">
-                <div className="p-3 bg-gray-50 border-b border-gray-200 font-medium text-sm text-center">
+             <div className="w-80 bg-surface border-l border-border-color flex flex-col shrink-0 animate-in slide-in-from-right-10 duration-200 z-10">
+                <div className="p-3 bg-background border-b border-border-color font-medium text-sm text-center text-text-primary">
                    Version {rightVersion.versionNumber} Comments
                 </div>
                 <div className="flex-1 overflow-hidden relative">

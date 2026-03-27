@@ -48,32 +48,32 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors">
+    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
              <div className="w-12 h-12 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg">
                 <span className="text-white font-bold text-2xl">A</span>
              </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
           {isLogin ? 'Sign in to your account' : 'Create a new account'}
         </h2>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100 dark:border-gray-700">
+        <div className="bg-surface py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-border-color">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {!isLogin && (
                 <>
                 <div className="flex flex-col items-center mb-6">
                     <div 
-                        className="relative w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-brand-500 transition-colors cursor-pointer group"
+                        className="relative w-24 h-24 rounded-full bg-background flex items-center justify-center overflow-hidden border-2 border-dashed border-border-color hover:border-brand-500 transition-colors cursor-pointer group"
                         onClick={() => fileInputRef.current?.click()}
                     >
                         {photoPreview ? (
                             <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                         ) : (
-                            <Camera className="w-8 h-8 text-gray-400 group-hover:text-brand-500" />
+                            <Camera className="w-8 h-8 text-text-secondary group-hover:text-brand-500" />
                         )}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                             <span className="text-white text-xs font-medium">Change</span>
@@ -86,18 +86,18 @@ export const Login: React.FC = () => {
                         className="hidden" 
                         accept="image/*"
                     />
-                    <span className="mt-2 text-xs text-gray-500 dark:text-gray-400">Profile Photo (Optional)</span>
+                    <span className="mt-2 text-xs text-text-secondary">Profile Photo (Optional)</span>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                    <label className="block text-sm font-medium text-text-primary">Full Name</label>
                     <div className="mt-1">
                         <input
                         type="text"
                         required={!isLogin}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="appearance-none block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-secondary/50 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-background text-text-primary"
                         placeholder="John Doe"
                         />
                     </div>
@@ -106,28 +106,28 @@ export const Login: React.FC = () => {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
+              <label className="block text-sm font-medium text-text-primary">Email address</label>
               <div className="mt-1">
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="appearance-none block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-secondary/50 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-background text-text-primary"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+              <label className="block text-sm font-medium text-text-primary">Password</label>
               <div className="mt-1">
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="appearance-none block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-secondary/50 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-background text-text-primary"
                   placeholder="••••••••"
                 />
               </div>
@@ -135,14 +135,14 @@ export const Login: React.FC = () => {
 
             {!isLogin && (
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Repeat Password</label>
+                    <label className="block text-sm font-medium text-text-primary">Repeat Password</label>
                     <div className="mt-1">
                         <input
                         type="password"
                         required={!isLogin}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="appearance-none block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-secondary/50 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-background text-text-primary"
                         placeholder="••••••••"
                         />
                     </div>
@@ -180,10 +180,10 @@ export const Login: React.FC = () => {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                <div className="w-full border-t border-border-color" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Or continue with</span>
+                <span className="px-2 bg-surface text-text-secondary">Or continue with</span>
               </div>
             </div>
 
@@ -201,7 +201,7 @@ export const Login: React.FC = () => {
                   }
                 }}
                 disabled={isLoading}
-                className="w-full flex justify-center items-center gap-3 py-2.5 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors disabled:opacity-50"
+                className="w-full flex justify-center items-center gap-3 py-2.5 px-4 border border-border-color rounded-md shadow-sm bg-background text-sm font-medium text-text-primary hover:bg-brand-50/50 dark:hover:bg-brand-900/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors disabled:opacity-50"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path

@@ -12,33 +12,65 @@
           extend: {
             colors: {
               brand: {
-                50: '#f0f9ff',
-                100: '#e0f2fe',
-                500: '#0ea5e9',
-                600: '#0284c7',
-                700: '#0369a1',
-                900: '#0c4a6e',
-              }
+                50: 'var(--brand-50)',
+                100: 'var(--brand-100)',
+                500: 'var(--brand-500)',
+                600: 'var(--brand-600)',
+                700: 'var(--brand-700)',
+                900: 'var(--brand-900)',
+              },
+              background: 'var(--bg-main)',
+              surface: 'var(--bg-surface)',
+              'text-primary': 'var(--text-primary)',
+              'text-secondary': 'var(--text-secondary)',
+              'border-color': 'var(--border-color)',
             }
           }
         }
       }
     </script>
     <style>
+      :root {
+        --bg-main: #F5F5F5;
+        --bg-surface: #FFFFFF;
+        --text-primary: #1F2937;
+        --text-secondary: #6B7280;
+        --border-color: #E5E7EB;
+        --brand-50: #EEF2FF;
+        --brand-100: #E0E7FF;
+        --brand-500: #6366F1;
+        --brand-600: #4F46E5;
+        --brand-700: #4338CA;
+        --brand-900: #312E81;
+      }
+      .dark {
+        --bg-main: #0B0C10;
+        --bg-surface: #1F2833;
+        --text-primary: #C5C6C7;
+        --text-secondary: #45A29E;
+        --border-color: #1F2833;
+        --brand-50: #E0FFFD;
+        --brand-100: #B2FFF9;
+        --brand-500: #66FCF1;
+        --brand-600: #45A29E;
+        --brand-700: #1F2833;
+        --brand-900: #0B0C10;
+      }
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #f1f1f1;
+        background: var(--bg-main);
       }
       ::-webkit-scrollbar-thumb {
-        background: #ccc;
+        background: var(--text-secondary);
         border-radius: 4px;
+        opacity: 0.5;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #999;
+        background: var(--brand-600);
       }
     </style>
   <script type="importmap">
@@ -60,7 +92,7 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-gray-50 text-gray-900 font-sans antialiased overflow-hidden transition-colors duration-200 dark:bg-gray-900 dark:text-white">
+  <body class="bg-background text-text-primary font-sans antialiased overflow-hidden transition-colors duration-200">
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

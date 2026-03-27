@@ -25,7 +25,6 @@ interface ReviewCanvasProps {
   readOnly?: boolean;
   zoom?: number;
   showAnnotations?: boolean;
-  showLiveOverlay?: boolean;
   // Overrides for multi-file assets
   activeAssetUrl?: string; 
   activeAssetType?: AssetType;
@@ -94,7 +93,6 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
   readOnly = false,
   zoom = 1,
   showAnnotations = true,
-  showLiveOverlay = true,
   activeAssetUrl,
   activeAssetType,
   scrollRef,
@@ -105,12 +103,22 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const creativeScrollRef = useRef<HTMLDivElement>(null);
+  const annotationScrollRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState<{x: number, y: number} | null>(null);
   const [currentPos, setCurrentPos] = useState<{x: number, y: number} | null>(null);
 
   const currentUrl = activeAssetUrl || version.url;
   const currentType = activeAssetType || version.assetType;
+
+  // Sync scroll for HTML assets
+  const handleCreativeScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (annotationScrollRef.current) {
+      annotationScrollRef.current.scrollTop = e.currentTarget.scrollTop;
+      annotationScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+    }
+  };
 
   // GIF State
   const [gifFrames, setGifFrames] = useState<{imageData: ImageData, delay: number, start: number}[]>([]);
@@ -129,6 +137,20 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
   const [iframeError, setIframeError] = useState(false);
   const [iframeContentSize, setIframeContentSize] = useState({ width: 0, height: 0 });
   const [assetDimensions, setAssetDimensions] = useState({ width: 0, height: 0 });
+
+  // Listen for cross-origin dimension messages
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'IFRAME_SIZE') {
+        const { width, height } = event.data;
+        if (width && height) {
+          setIframeContentSize({ width, height });
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const syncIframeState = (e?: Event) => {
     if (iframeRef.current?.contentWindow) {
@@ -741,10 +763,10 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
         );
       case AssetType.GIF:
         if (isGifLoading) {
-            return <div className="text-white animate-pulse">Processing GIF...</div>;
+            return <div className="text-text-primary animate-pulse">Processing GIF...</div>;
         }
         if (gifError) {
-             return <div className="text-red-400 p-10 bg-gray-800 rounded">{gifError}</div>;
+             return <div className="text-red-400 p-10 bg-surface rounded">{gifError}</div>;
         }
         // Need to set explicit dimensions or canvas defaults to 300x150
         const w = gifFrames[0]?.imageData.width || 'auto';
@@ -760,10 +782,10 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
         );
       case AssetType.PDF:
         if (isPdfLoading) {
-            return <div className="text-white animate-pulse">Loading PDF...</div>;
+            return <div className="text-text-primary animate-pulse">Loading PDF...</div>;
         }
         return (
-            <div className="flex flex-col gap-4 bg-gray-500/10 p-4 rounded shadow-inner">
+            <div className="flex flex-col gap-4 bg-surface/10 p-4 rounded shadow-inner">
                 {pdfPages.map((page, index) => (
                     <PdfPageRenderer 
                         key={index} 
@@ -776,11 +798,11 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
         );
       case AssetType.HTML:
         return (
-          <div className="absolute top-0 left-0 w-full h-full bg-white border border-gray-200 shadow-lg">
+          <div className="absolute top-0 left-0 w-full h-full bg-surface border border-border-color shadow-lg">
             {isIframeLoading && !iframeError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span className="ml-2 text-gray-500">Loading creative...</span>
+              <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+                <span className="ml-2 text-text-secondary">Loading creative...</span>
               </div>
             )}
             {iframeError && (
@@ -821,25 +843,12 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
             {tool !== 'INTERACT' && (
               <div className="absolute inset-0 bg-transparent z-20" /> 
             )}
-            
-            {/* Secondary Annotation Overlay for Live Website */}
-            {showAnnotations && showLiveOverlay && (
-              <div 
-                className="absolute inset-0 pointer-events-none z-30"
-                style={{
-                  width: '100%',
-                  height: '100%'
-                }}
-              >
-                {children}
-              </div>
-            )}
           </div>
         );
       default:
         return (
-          <div className="flex items-center justify-center w-full h-[400px] bg-gray-100 rounded-lg border-2 border-dashed border-gray-300">
-            <div className="text-center text-gray-500">
+          <div className="flex items-center justify-center w-full h-[400px] bg-background rounded-lg border-2 border-dashed border-border-color">
+            <div className="text-center text-text-secondary">
               <p className="text-lg font-medium">Unsupported Asset Type</p>
               <p className="text-sm">This asset type ({currentType}) cannot be rendered.</p>
             </div>
@@ -871,40 +880,90 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
           width: 'fit-content',
           height: 'fit-content'
         } : {
-          width: iframeContentSize.width > 0 ? `${iframeContentSize.width}px` : '100%',
-          height: iframeContentSize.height > 0 ? `${iframeContentSize.height}px` : '100%',
-          transform: iframeContentSize.width > 0 ? `scale(${zoom})` : 'none',
-          transformOrigin: 'center',
-          backgroundColor: '#fff'
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'var(--surface)'
         }}
       >
-        {renderAsset()}
-        
-        {/* Annotations Overlay - Perfectly aligned with container */}
-        {showAnnotations && (
-          <div 
-            className="absolute top-0 left-0 pointer-events-none z-20"
-            style={{ 
-              width: '100%', 
-              height: '100%'
-            }}
-          >
-            {/* Drawing Preview Box */}
-            {isDrawing && startPos && currentPos && (
-              <div 
-                className="absolute border-2 border-brand-500 bg-brand-500/20 pointer-events-none z-30"
-                style={{
-                  left: `${Math.min(startPos.x, currentPos.x)}%`,
-                  top: `${Math.min(startPos.y, currentPos.y)}%`,
-                  width: `${Math.abs(currentPos.x - startPos.x)}%`,
-                  height: `${Math.abs(currentPos.y - startPos.y)}%`
-                }}
-              />
-            )}
+        {currentType === AssetType.HTML ? (
+          <div className="relative w-full h-full overflow-hidden">
+            {/* Creative Scroll Layer */}
+            <div 
+              ref={creativeScrollRef}
+              onScroll={handleCreativeScroll}
+              className="absolute inset-0 overflow-auto z-10"
+            >
+              <div style={{ 
+                width: iframeContentSize.width > 0 ? `${iframeContentSize.width}px` : '100%',
+                height: iframeContentSize.height > 0 ? `${iframeContentSize.height}px` : '100%',
+                transform: iframeContentSize.width > 0 ? `scale(${zoom})` : 'none',
+                transformOrigin: 'top left'
+              }}>
+                {renderAsset()}
+              </div>
+            </div>
 
-            {/* Pins & Boxes Overlay */}
-            {(activeAssetType || version.assetType) !== AssetType.HTML && children}
+            {/* Annotations Scroll Layer */}
+            {showAnnotations && (
+              <div 
+                ref={annotationScrollRef}
+                className="absolute inset-0 overflow-auto z-20 pointer-events-none"
+              >
+                <div style={{ 
+                  width: iframeContentSize.width > 0 ? `${iframeContentSize.width}px` : '100%',
+                  height: iframeContentSize.height > 0 ? `${iframeContentSize.height}px` : '100%',
+                  transform: iframeContentSize.width > 0 ? `scale(${zoom})` : 'none',
+                  transformOrigin: 'top left',
+                  position: 'relative'
+                }}>
+                  {/* Drawing Preview Box */}
+                  {isDrawing && startPos && currentPos && (
+                    <div 
+                      className="absolute border-2 border-brand-500 bg-brand-500/20 pointer-events-none z-30"
+                      style={{
+                        left: `${Math.min(startPos.x, currentPos.x)}%`,
+                        top: `${Math.min(startPos.y, currentPos.y)}%`,
+                        width: `${Math.abs(currentPos.x - startPos.x)}%`,
+                        height: `${Math.abs(currentPos.y - startPos.y)}%`
+                      }}
+                    />
+                  )}
+                  {children}
+                </div>
+              </div>
+            )}
           </div>
+        ) : (
+          <>
+            {renderAsset()}
+            
+            {/* Annotations Overlay - Perfectly aligned with container */}
+            {showAnnotations && (
+              <div 
+                className="absolute top-0 left-0 pointer-events-none z-20"
+                style={{ 
+                  width: '100%', 
+                  height: '100%'
+                }}
+              >
+                {/* Drawing Preview Box */}
+                {isDrawing && startPos && currentPos && (
+                  <div 
+                    className="absolute border-2 border-brand-500 bg-brand-500/20 pointer-events-none z-30"
+                    style={{
+                      left: `${Math.min(startPos.x, currentPos.x)}%`,
+                      top: `${Math.min(startPos.y, currentPos.y)}%`,
+                      width: `${Math.abs(currentPos.x - startPos.x)}%`,
+                      height: `${Math.abs(currentPos.y - startPos.y)}%`
+                    }}
+                  />
+                )}
+
+                {/* Pins & Boxes Overlay */}
+                {children}
+              </div>
+            )}
+          </>
         )}
       </div>
   );
@@ -912,7 +971,7 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
   return (
     <div 
         ref={scrollRef}
-        className={`w-full h-full bg-gray-900 overflow-auto flex ${className || ''}`}
+        className={`w-full h-full bg-background overflow-auto flex ${className || ''}`}
     >
       {!isMedia && iframeContentSize.width > 0 ? (
         <div 

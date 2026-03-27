@@ -53,7 +53,7 @@ export const Dashboard: React.FC = () => {
       case AssetType.IMAGE: return <FileImage className="w-5 h-5 text-blue-500" />;
       case AssetType.HTML: return <FileCode className="w-5 h-5 text-orange-500" />;
       case AssetType.PDF: return <FileText className="w-5 h-5 text-red-500" />;
-      default: return <Folder className="w-5 h-5 text-gray-500" />;
+      default: return <Folder className="w-5 h-5 text-text-secondary" />;
     }
   };
 
@@ -88,16 +88,16 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden transition-colors">
+    <div className="flex h-screen bg-background text-text-primary overflow-hidden transition-colors">
       
       {/* Sidebar */}
-      <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col shrink-0 transition-colors">
+      <div className="w-64 bg-surface border-r border-border-color flex flex-col shrink-0 transition-colors">
         <div className="p-6">
              <div className="flex items-center gap-2 mb-8">
                  <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
                     <span className="text-white font-bold text-xl">A</span>
                  </div>
-                 <span className="font-bold text-xl text-gray-900 dark:text-white tracking-tight">AXProof</span>
+                 <span className="font-bold text-xl text-text-primary tracking-tight">AXProof</span>
              </div>
 
              <Button className="w-full justify-start" onClick={() => setIsUploadOpen(true)}>
@@ -107,16 +107,16 @@ export const Dashboard: React.FC = () => {
 
         <div className="flex-1 overflow-y-auto px-4 space-y-6">
             <div>
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-2">Library</h3>
+                <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 px-2">Library</h3>
                 <button 
                     onClick={() => { setActiveTab('PROJECTS'); setActiveFolderId(null); }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'PROJECTS' && activeFolderId === null ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'PROJECTS' && activeFolderId === null ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' : 'text-text-secondary hover:bg-brand-50/50 dark:hover:bg-brand-900/10'}`}
                 >
                     <LayoutGrid className="w-4 h-4" /> All Projects
                 </button>
                 <button 
                     onClick={() => { setActiveTab('FILES'); setActiveFolderId(null); }}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FILES' ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'FILES' ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' : 'text-text-secondary hover:bg-brand-50/50 dark:hover:bg-brand-900/10'}`}
                 >
                     <FileText className="w-4 h-4" /> My Files
                 </button>
@@ -124,43 +124,43 @@ export const Dashboard: React.FC = () => {
 
             <div>
                 <div className="flex items-center justify-between px-2 mb-2">
-                    <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Folders</h3>
-                    <button onClick={() => setNewFolderModal(true)} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                    <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Folders</h3>
+                    <button onClick={() => setNewFolderModal(true)} className="text-text-secondary hover:text-text-primary">
                         <Plus className="w-4 h-4" />
                     </button>
                 </div>
                 <div className="space-y-1">
                     {folders.map(folder => (
-                        <div key={folder.id} className="group flex items-center justify-between pr-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <div key={folder.id} className="group flex items-center justify-between pr-2 rounded-lg hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors">
                             <button 
                                 onClick={() => { setActiveTab('PROJECTS'); setActiveFolderId(folder.id); }}
-                                className={`flex-1 flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFolderId === folder.id ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300' : 'text-gray-600 dark:text-gray-400'}`}
+                                className={`flex-1 flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeFolderId === folder.id ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300' : 'text-text-secondary'}`}
                             >
-                                <Folder className={`w-4 h-4 ${activeFolderId === folder.id ? 'fill-brand-200 dark:fill-brand-800 text-brand-500' : 'fill-gray-100 dark:fill-gray-600 text-gray-400 dark:text-gray-500'}`} /> 
+                                <Folder className={`w-4 h-4 ${activeFolderId === folder.id ? 'fill-brand-200 dark:fill-brand-800 text-brand-500' : 'fill-brand-50 dark:fill-brand-900/20 text-text-secondary'}`} /> 
                                 <span className="truncate">{folder.name}</span>
                             </button>
-                            <button onClick={() => handleDeleteFolder(folder.id)} className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity p-1">
+                            <button onClick={() => handleDeleteFolder(folder.id)} className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-red-500 transition-opacity p-1">
                                 <Trash2 className="w-3 h-3" />
                             </button>
                         </div>
                     ))}
                     {folders.length === 0 && (
-                        <div className="px-3 py-2 text-sm text-gray-400 italic">No folders created</div>
+                        <div className="px-3 py-2 text-sm text-text-secondary italic">No folders created</div>
                     )}
                 </div>
             </div>
         </div>
 
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-t border-border-color">
             <div className="flex items-center gap-3">
-                <img src={currentUser.avatar} alt="" className="w-9 h-9 rounded-full bg-gray-200" />
+                <img src={currentUser.avatar} alt="" className="w-9 h-9 rounded-full bg-brand-50 dark:bg-brand-900/20" />
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{currentUser.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Workspace Admin</p>
+                    <p className="text-sm font-medium text-text-primary truncate">{currentUser.name}</p>
+                    <p className="text-xs text-text-secondary truncate">Workspace Admin</p>
                 </div>
                 <button 
                   onClick={logout} 
-                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  className="p-2 text-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   title="Sign out"
                 >
                     <LogOut className="w-5 h-5" />
@@ -175,10 +175,10 @@ export const Dashboard: React.FC = () => {
             {/* Header */}
             <div className="flex justify-between items-start">
                 <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-2xl font-bold text-text-primary">
                     {activeTab === 'FILES' ? 'My Files' : activeFolderId ? folders.find(f => f.id === activeFolderId)?.name : 'All Projects'}
                 </h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-text-secondary mt-1">
                     {activeTab === 'FILES' ? `Manage your saved assets and reports` : activeFolderId ? `${filteredProjects.length} projects in folder` : `Overview of all creative assets`}
                 </p>
                 </div>
@@ -187,7 +187,7 @@ export const Dashboard: React.FC = () => {
                   {/* Theme Toggle */}
                   <button 
                       onClick={toggleTheme}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 dark:bg-brand-900/30 text-text-primary hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors text-sm font-medium border border-border-color"
                   >
                       {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                       <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
@@ -196,25 +196,25 @@ export const Dashboard: React.FC = () => {
                   {/* Stats (only show on All Projects view for summary) */}
                   {activeTab === 'PROJECTS' && !activeFolderId && (
                       <div className="flex gap-4">
-                          <div className="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 transition-colors">
+                          <div className="bg-surface px-4 py-2 rounded-lg border border-border-color shadow-sm flex items-center gap-3 transition-colors">
                               <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-full"><Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" /></div>
                               <div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">In Review</p>
-                                  <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{inReview}</p>
+                                  <p className="text-xs text-text-secondary uppercase font-bold">In Review</p>
+                                  <p className="text-lg font-bold text-text-primary leading-none">{inReview}</p>
                               </div>
                           </div>
-                          <div className="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 transition-colors">
+                          <div className="bg-surface px-4 py-2 rounded-lg border border-border-color shadow-sm flex items-center gap-3 transition-colors">
                               <div className="p-1.5 bg-orange-50 dark:bg-orange-900/30 rounded-full"><AlertCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" /></div>
                               <div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Changes</p>
-                                  <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{changes}</p>
+                                  <p className="text-xs text-text-secondary uppercase font-bold">Changes</p>
+                                  <p className="text-lg font-bold text-text-primary leading-none">{changes}</p>
                               </div>
                           </div>
-                          <div className="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 transition-colors">
+                          <div className="bg-surface px-4 py-2 rounded-lg border border-border-color shadow-sm flex items-center gap-3 transition-colors">
                               <div className="p-1.5 bg-green-50 dark:bg-green-900/30 rounded-full"><CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" /></div>
                               <div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Approved</p>
-                                  <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{approved}</p>
+                                  <p className="text-xs text-text-secondary uppercase font-bold">Approved</p>
+                                  <p className="text-lg font-bold text-text-primary leading-none">{approved}</p>
                               </div>
                           </div>
                       </div>
@@ -226,24 +226,24 @@ export const Dashboard: React.FC = () => {
 
             {activeTab === 'PROJECTS' ? (
                 /* Projects List */
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[400px] transition-colors">
-                    <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center gap-4">
+                <div className="bg-surface rounded-xl shadow-sm border border-border-color overflow-hidden min-h-[400px] transition-colors">
+                    <div className="p-4 border-b border-border-color flex justify-between items-center gap-4">
                         <div className="relative flex-1 max-w-md">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
                             <input 
                             type="text" 
                             placeholder="Search projects by name or client..." 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 border border-gray-600 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-gray-700 dark:bg-gray-900 text-[#FFFFFF] placeholder-gray-400"
+                            className="w-full pl-9 pr-4 py-2 border border-border-color rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-background text-text-primary placeholder-text-secondary/50"
                             />
                         </div>
                         {/* Sort or other controls could go here */}
                     </div>
                     
                     <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-                        <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 font-medium">
+                    <table className="w-full text-left text-sm text-text-secondary">
+                        <thead className="bg-brand-50/50 dark:bg-brand-900/10 text-text-secondary font-medium">
                         <tr>
                             <th className="px-6 py-3 w-[40%]">Project Name</th>
                             <th className="px-6 py-3">Client</th>
@@ -252,13 +252,13 @@ export const Dashboard: React.FC = () => {
                             <th className="px-6 py-3 text-right">Action</th>
                         </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                        <tbody className="divide-y divide-border-color">
                         {filteredProjects.length === 0 ? (
                             <tr>
                             <td colSpan={5} className="px-6 py-12 text-center">
-                                <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
-                                    <FolderOpen className="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" />
-                                    <p className="text-base font-medium text-gray-900 dark:text-gray-200">No projects found</p>
+                                <div className="flex flex-col items-center justify-center text-text-secondary">
+                                    <FolderOpen className="w-12 h-12 mb-3 text-brand-100 dark:text-brand-900/20" />
+                                    <p className="text-base font-medium text-text-primary">No projects found</p>
                                     <p className="text-sm">Try adjusting your search or create a new project.</p>
                                     <Button className="mt-4" onClick={() => setIsUploadOpen(true)}>
                                         <Plus className="w-4 h-4 mr-2" /> Create Project
@@ -270,24 +270,24 @@ export const Dashboard: React.FC = () => {
                             filteredProjects.map(project => {
                             const currentVersion = project.versions.find(v => v.id === project.currentVersionId);
                             return (
-                                <tr key={project.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors group">
+                                <tr key={project.id} className="hover:bg-brand-50/30 dark:hover:bg-brand-900/5 transition-colors group">
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
                                     {project.thumbnail ? (
-                                        <img src={project.thumbnail} alt="" className="w-10 h-10 rounded object-cover bg-gray-200 dark:bg-gray-700 shadow-sm" />
+                                        <img src={project.thumbnail} alt="" className="w-10 h-10 rounded object-cover bg-brand-50 dark:bg-brand-900/20 shadow-sm" />
                                     ) : (
-                                        <div className="w-10 h-10 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
+                                        <div className="w-10 h-10 rounded bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center text-text-secondary">
                                         {currentVersion && getIcon(currentVersion.assetType)}
                                         </div>
                                     )}
                                     <div className="min-w-0">
-                                        <Link to={`/project/${project.id}`} className="font-medium text-gray-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 truncate block">
+                                        <Link to={`/project/${project.id}`} className="font-medium text-text-primary hover:text-brand-600 truncate block">
                                             {project.name}
                                         </Link>
-                                        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                                        <div className="flex items-center gap-1 text-xs text-text-secondary">
                                         {currentVersion && getIcon(currentVersion.assetType)}
                                         <span>{currentVersion?.assetType}</span>
-                                        <span className="text-gray-300 dark:text-gray-600">|</span>
+                                        <span className="text-border-color">|</span>
                                         <span className="truncate max-w-[150px]">{currentVersion?.fileName || 'asset'}</span>
                                         </div>
                                     </div>
@@ -295,7 +295,7 @@ export const Dashboard: React.FC = () => {
                                 </td>
                                 <td className="px-6 py-4">{project.clientName}</td>
                                 <td className="px-6 py-4">
-                                    <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs font-mono text-gray-600 dark:text-gray-300">v{currentVersion?.versionNumber}</span>
+                                    <span className="bg-brand-50 dark:bg-brand-900/30 px-2 py-1 rounded text-xs font-mono text-text-secondary">v{currentVersion?.versionNumber}</span>
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
@@ -336,19 +336,19 @@ export const Dashboard: React.FC = () => {
                                                     e.stopPropagation();
                                                     setActionMenuOpen(actionMenuOpen === project.id ? null : project.id);
                                                 }}
-                                                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                                                className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-md transition-colors"
                                             >
                                                 <MoreVertical className="w-4 h-4" />
                                             </button>
     
                                             {actionMenuOpen === project.id && (
-                                                <div ref={actionMenuRef} className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-20 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
+                                                <div ref={actionMenuRef} className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-lg shadow-xl border border-border-color z-20 animate-in fade-in zoom-in-95 duration-100 overflow-hidden">
                                                     <button 
                                                         onClick={() => {
                                                             setRenameModal({ isOpen: true, projectId: project.id, currentName: project.name });
                                                             setActionMenuOpen(null);
                                                         }}
-                                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                                                        className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-brand-50/50 dark:hover:bg-brand-900/10 flex items-center gap-2"
                                                     >
                                                         <Edit2 className="w-4 h-4" /> Rename
                                                     </button>
@@ -357,11 +357,11 @@ export const Dashboard: React.FC = () => {
                                                             setMoveModal({ isOpen: true, projectId: project.id });
                                                             setActionMenuOpen(null);
                                                         }}
-                                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                                                        className="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-brand-50/50 dark:hover:bg-brand-900/10 flex items-center gap-2"
                                                     >
                                                         <FolderInput className="w-4 h-4" /> Move to Folder
                                                     </button>
-                                                    <div className="h-px bg-gray-100 dark:bg-gray-700 my-1" />
+                                                    <div className="h-px bg-border-color my-1" />
                                                     <button 
                                                         onClick={() => {
                                                             handleDeleteProject(project.id);
@@ -386,23 +386,23 @@ export const Dashboard: React.FC = () => {
                 </div>
             ) : (
                 /* Files List */
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden min-h-[400px] transition-colors">
-                    <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center gap-4">
+                <div className="bg-surface rounded-xl shadow-sm border border-border-color overflow-hidden min-h-[400px] transition-colors">
+                    <div className="p-4 border-b border-border-color flex justify-between items-center gap-4">
                         <div className="relative flex-1 max-w-md">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
                             <input 
                                 type="text" 
                                 placeholder="Search files..." 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 border border-gray-600 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-gray-700 dark:bg-gray-900 text-[#FFFFFF] placeholder-gray-400"
+                                className="w-full pl-9 pr-4 py-2 border border-border-color rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-background text-text-primary placeholder-text-secondary/50"
                             />
                         </div>
                     </div>
                     
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-gray-600 dark:text-gray-300">
-                            <thead className="bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 font-medium">
+                        <table className="w-full text-left text-sm text-text-secondary">
+                            <thead className="bg-brand-50/50 dark:bg-brand-900/10 text-text-secondary font-medium">
                                 <tr>
                                     <th className="px-6 py-3 w-[40%]">File Name</th>
                                     <th className="px-6 py-3">Type</th>
@@ -411,28 +411,28 @@ export const Dashboard: React.FC = () => {
                                     <th className="px-6 py-3 text-right">Action</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                            <tbody className="divide-y divide-border-color">
                                 {savedFiles.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-12 text-center">
-                                            <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
-                                                <FileText className="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600" />
-                                                <p className="text-base font-medium text-gray-900 dark:text-gray-200">No saved files</p>
+                                            <div className="flex flex-col items-center justify-center text-text-secondary">
+                                                <FileText className="w-12 h-12 mb-3 text-brand-100 dark:text-brand-900/20" />
+                                                <p className="text-base font-medium text-text-primary">No saved files</p>
                                                 <p className="text-sm">Save files from project reviews or attachments to see them here.</p>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : (
                                     savedFiles.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase())).map(file => (
-                                        <tr key={file.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors group">
+                                        <tr key={file.id} className="hover:bg-brand-50/30 dark:hover:bg-brand-900/5 transition-colors group">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">
+                                                    <div className="w-10 h-10 rounded bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center text-text-secondary">
                                                         {getIcon(file.assetType)}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="font-medium text-gray-900 dark:text-white truncate">{file.name}</p>
-                                                        <p className="text-xs text-gray-400 dark:text-gray-500 uppercase">{file.type}</p>
+                                                        <p className="font-medium text-text-primary truncate">{file.name}</p>
+                                                        <p className="text-xs text-text-secondary uppercase">{file.type}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -452,7 +452,7 @@ export const Dashboard: React.FC = () => {
                                                                 deleteSavedFile(file.id);
                                                             }
                                                         }}
-                                                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                                                        className="p-1.5 text-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -472,8 +472,8 @@ export const Dashboard: React.FC = () => {
       {/* New Folder Modal */}
       {newFolderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-sm animate-in zoom-in-95 border border-gray-200 dark:border-gray-700">
-                 <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Create New Folder</h3>
+             <div className="bg-surface rounded-xl shadow-xl p-6 w-full max-w-sm animate-in zoom-in-95 border border-border-color">
+                 <h3 className="text-lg font-bold mb-4 text-text-primary">Create New Folder</h3>
                  <form onSubmit={handleCreateFolder}>
                      <input 
                         autoFocus
@@ -481,10 +481,10 @@ export const Dashboard: React.FC = () => {
                         placeholder="Folder Name"
                         value={newFolderName}
                         onChange={(e) => setNewFolderName(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-600 rounded-lg mb-4 focus:ring-2 focus:ring-brand-500 outline-none bg-gray-700 text-[#FFFFFF]"
+                        className="w-full px-3 py-2 border border-border-color rounded-lg mb-4 focus:ring-2 focus:ring-brand-500 outline-none bg-background text-text-primary"
                      />
                      <div className="flex justify-end gap-2">
-                         <Button type="button" variant="ghost" onClick={() => setNewFolderModal(false)} className="dark:text-gray-300 dark:hover:text-white">Cancel</Button>
+                         <Button type="button" variant="ghost" onClick={() => setNewFolderModal(false)}>Cancel</Button>
                          <Button type="submit">Create</Button>
                      </div>
                  </form>
@@ -495,18 +495,18 @@ export const Dashboard: React.FC = () => {
       {/* Rename Modal */}
       {renameModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-sm animate-in zoom-in-95 border border-gray-200 dark:border-gray-700">
-                 <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Rename Project</h3>
+             <div className="bg-surface rounded-xl shadow-xl p-6 w-full max-w-sm animate-in zoom-in-95 border border-border-color">
+                 <h3 className="text-lg font-bold mb-4 text-text-primary">Rename Project</h3>
                  <form onSubmit={handleRenameProject}>
                      <input 
                         autoFocus
                         type="text" 
                         value={renameModal.currentName}
                         onChange={(e) => setRenameModal({ ...renameModal, currentName: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-600 rounded-lg mb-4 focus:ring-2 focus:ring-brand-500 outline-none bg-gray-700 text-[#FFFFFF]"
+                        className="w-full px-3 py-2 border border-border-color rounded-lg mb-4 focus:ring-2 focus:ring-brand-500 outline-none bg-background text-text-primary"
                      />
                      <div className="flex justify-end gap-2">
-                         <Button type="button" variant="ghost" onClick={() => setRenameModal({ ...renameModal, isOpen: false })} className="dark:text-gray-300 dark:hover:text-white">Cancel</Button>
+                         <Button type="button" variant="ghost" onClick={() => setRenameModal({ ...renameModal, isOpen: false })}>Cancel</Button>
                          <Button type="submit">Save</Button>
                      </div>
                  </form>
@@ -517,27 +517,27 @@ export const Dashboard: React.FC = () => {
       {/* Move Project Modal */}
       {moveModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-sm animate-in zoom-in-95 border border-gray-200 dark:border-gray-700">
-                 <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Move Project</h3>
+             <div className="bg-surface rounded-xl shadow-xl p-6 w-full max-w-sm animate-in zoom-in-95 border border-border-color">
+                 <h3 className="text-lg font-bold mb-4 text-text-primary">Move Project</h3>
                  <div className="space-y-1 max-h-60 overflow-y-auto mb-4">
                      <button 
                         onClick={() => { moveProject(moveModal.projectId, undefined); setMoveModal({ ...moveModal, isOpen: false }); }}
-                        className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-200"
+                        className="w-full text-left px-3 py-2 rounded hover:bg-brand-50/50 dark:hover:bg-brand-900/10 flex items-center gap-2 text-text-primary"
                      >
-                         <LayoutGrid className="w-4 h-4 text-gray-500" /> All Projects (Root)
+                         <LayoutGrid className="w-4 h-4 text-text-secondary" /> All Projects (Root)
                      </button>
                      {folders.map(f => (
                          <button 
                             key={f.id}
                             onClick={() => { moveProject(moveModal.projectId, f.id); setMoveModal({ ...moveModal, isOpen: false }); }}
-                            className="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-200"
+                            className="w-full text-left px-3 py-2 rounded hover:bg-brand-50/50 dark:hover:bg-brand-900/10 flex items-center gap-2 text-text-primary"
                          >
-                             <Folder className="w-4 h-4 text-yellow-500 fill-yellow-100" /> {f.name}
+                             <Folder className="w-4 h-4 text-brand-500 fill-brand-100 dark:fill-brand-900/40" /> {f.name}
                          </button>
                      ))}
                  </div>
                  <div className="flex justify-end gap-2">
-                     <Button type="button" variant="ghost" onClick={() => setMoveModal({ ...moveModal, isOpen: false })} className="dark:text-gray-300 dark:hover:text-white">Cancel</Button>
+                     <Button type="button" variant="ghost" onClick={() => setMoveModal({ ...moveModal, isOpen: false })}>Cancel</Button>
                  </div>
              </div>
         </div>
