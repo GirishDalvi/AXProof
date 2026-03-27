@@ -138,7 +138,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ isOpen, onClose }) => 
     
     if (file.type.startsWith('video/')) return <Film className="w-8 h-8 text-purple-500" />;
     if (file.type.startsWith('image/')) return <ImageIcon className="w-8 h-8 text-blue-500" />;
-    if (file.type === 'text/html' || file.name.endsWith('.html')) return <FileCode className="w-8 h-8 text-orange-500" />;
+    if (file.type === 'text/html' || file.name.endsWith('.html')) return <FileCode className="w-8 h-8 text-brand-500" />;
     if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) return <FileText className="w-8 h-8 text-red-500" />;
     
     return <FileType className="w-8 h-8 text-text-secondary" />;

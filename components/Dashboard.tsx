@@ -94,7 +94,7 @@ export const Dashboard: React.FC = () => {
     switch (type) {
       case AssetType.VIDEO: return <FileVideo className="w-5 h-5 text-purple-500" />;
       case AssetType.IMAGE: return <FileImage className="w-5 h-5 text-blue-500" />;
-      case AssetType.HTML: return <FileCode className="w-5 h-5 text-orange-500" />;
+      case AssetType.HTML: return <FileCode className="w-5 h-5 text-brand-500" />;
       case AssetType.PDF: return <FileText className="w-5 h-5 text-red-500" />;
       default: return <Folder className="w-5 h-5 text-text-secondary" />;
     }
@@ -254,7 +254,7 @@ export const Dashboard: React.FC = () => {
                               </div>
                           </div>
                           <div className="bg-surface px-4 py-2 rounded-lg border border-border-color shadow-sm flex items-center gap-3 transition-colors">
-                              <div className="p-1.5 bg-orange-50 dark:bg-orange-900/30 rounded-full"><AlertCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" /></div>
+                              <div className="p-1.5 bg-brand-50 dark:bg-brand-900/30 rounded-full"><AlertCircle className="w-4 h-4 text-brand-600 dark:text-brand-400" /></div>
                               <div>
                                   <p className="text-xs text-text-secondary uppercase font-bold">Changes</p>
                                   <p className="text-lg font-bold text-text-primary leading-none">{changes}</p>

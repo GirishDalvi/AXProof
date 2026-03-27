@@ -521,7 +521,7 @@ export const ReviewRoom: React.FC = () => {
                     </span>
                 )}
                 {isChangesRequired && (
-                    <span className="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="bg-brand-100 text-brand-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" /> Changes Required v{version.versionNumber}
                     </span>
                 )}
@@ -682,7 +682,7 @@ export const ReviewRoom: React.FC = () => {
           ) : isChangesRequired ? (
             <div className="flex items-center gap-3">
                  <div className="flex flex-col items-end mr-2">
-                    <span className="text-xs font-bold text-orange-700 uppercase tracking-wide">Changes Required</span>
+                    <span className="text-xs font-bold text-brand-700 uppercase tracking-wide">Changes Required</span>
                     <span className="text-[10px] text-text-secondary">by {version.changesRequestedBy || 'Reviewer'}</span>
                  </div>
                  <Button variant="primary" size="sm" onClick={handleNewVersionClick}>
