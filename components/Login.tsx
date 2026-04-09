@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Button } from './ui/Button';
 import { useAXProof } from '../context/ZflowContext';
-import { Camera, X } from 'lucide-react';
+import { Camera, X, Mail, Lock, User, ArrowRight, Github } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const Login: React.FC = () => {
   const { login, signup, loginWithGoogle } = useAXProof();
@@ -48,122 +49,155 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-             <div className="w-12 h-12 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-2xl">A</span>
+    <div className="min-h-screen bg-background-light dark:bg-background-dark flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="sm:mx-auto sm:w-full sm:max-w-md"
+      >
+        <div className="flex justify-center mb-8">
+             <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20">
+                <span className="text-white font-bold text-3xl">A</span>
              </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-text-primary">
-          {isLogin ? 'Sign in to your account' : 'Create a new account'}
+        <h2 className="text-center text-3xl font-bold tracking-tight text-text-primary-light dark:text-text-primary-dark">
+          {isLogin ? 'Welcome back' : 'Create your account'}
         </h2>
-      </div>
+        <p className="mt-2 text-center text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">
+          {isLogin ? "Don't have an account?" : "Already have an account?"}
+          <button 
+            onClick={() => { setIsLogin(!isLogin); setError(''); }}
+            className="ml-1 text-primary hover:text-primary-hover font-bold transition-colors"
+          >
+            {isLogin ? 'Sign up for free' : 'Sign in here'}
+          </button>
+        </p>
+      </motion.div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-surface py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-border-color">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mt-10 sm:mx-auto sm:w-full sm:max-w-md"
+      >
+        <div className="bg-card-light dark:bg-card-dark py-10 px-6 shadow-soft sm:rounded-3xl sm:px-12 border border-border-light dark:border-border-dark">
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {!isLogin && (
-                <>
-                <div className="flex flex-col items-center mb-6">
-                    <div 
-                        className="relative w-24 h-24 rounded-full bg-background flex items-center justify-center overflow-hidden border-2 border-dashed border-border-color hover:border-brand-500 transition-colors cursor-pointer group"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        {photoPreview ? (
-                            <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
-                        ) : (
-                            <Camera className="w-8 h-8 text-text-secondary group-hover:text-brand-500" />
-                        )}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                            <span className="text-white text-xs font-medium">Change</span>
+            <AnimatePresence mode="wait">
+              {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-6 overflow-hidden"
+                  >
+                    <div className="flex flex-col items-center mb-8">
+                        <div 
+                            className="relative w-24 h-24 rounded-3xl bg-background-light dark:bg-background-dark flex items-center justify-center overflow-hidden border-2 border-dashed border-border-light dark:border-border-dark hover:border-primary transition-all cursor-pointer group shadow-inner"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {photoPreview ? (
+                                <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <Camera className="w-8 h-8 text-text-secondary-light dark:text-text-secondary-dark opacity-40 group-hover:text-primary group-hover:opacity-100 transition-all" />
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <span className="text-white text-xs font-bold">Change</span>
+                            </div>
+                        </div>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handleFileChange} 
+                            className="hidden" 
+                            accept="image/*"
+                        />
+                        <span className="mt-3 text-[10px] font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider opacity-60">Profile Photo</span>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-2">Full Name</label>
+                        <div className="relative">
+                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary-light dark:text-text-secondary-dark opacity-40" />
+                            <input
+                              type="text"
+                              required={!isLogin}
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              className="block w-full pl-11 pr-4 py-3 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-text-secondary-light/30"
+                              placeholder="John Doe"
+                            />
                         </div>
                     </div>
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileChange} 
-                        className="hidden" 
-                        accept="image/*"
-                    />
-                    <span className="mt-2 text-xs text-text-secondary">Profile Photo (Optional)</span>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-text-primary">Full Name</label>
-                    <div className="mt-1">
-                        <input
-                        type="text"
-                        required={!isLogin}
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="appearance-none block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-secondary/50 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-background text-text-primary"
-                        placeholder="John Doe"
-                        />
-                    </div>
-                </div>
-                </>
-            )}
+                  </motion.div>
+              )}
+            </AnimatePresence>
 
             <div>
-              <label className="block text-sm font-medium text-text-primary">Email address</label>
-              <div className="mt-1">
+              <label className="block text-xs font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-2">Email address</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary-light dark:text-text-secondary-dark opacity-40" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-secondary/50 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-background text-text-primary"
+                  className="block w-full pl-11 pr-4 py-3 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-text-secondary-light/30"
                   placeholder="you@example.com"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-primary">Password</label>
-              <div className="mt-1">
+              <label className="block text-xs font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-2">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary-light dark:text-text-secondary-dark opacity-40" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-secondary/50 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-background text-text-primary"
+                  className="block w-full pl-11 pr-4 py-3 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-text-secondary-light/30"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
             {!isLogin && (
-                <div>
-                    <label className="block text-sm font-medium text-text-primary">Repeat Password</label>
-                    <div className="mt-1">
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="overflow-hidden"
+                >
+                    <label className="block text-xs font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-wider mb-2">Repeat Password</label>
+                    <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary-light dark:text-text-secondary-dark opacity-40" />
                         <input
-                        type="password"
-                        required={!isLogin}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="appearance-none block w-full px-3 py-2 border border-border-color rounded-md shadow-sm placeholder-text-secondary/50 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm bg-background text-text-primary"
-                        placeholder="••••••••"
+                          type="password"
+                          required={!isLogin}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="block w-full pl-11 pr-4 py-3 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-text-secondary-light/30"
+                          placeholder="••••••••"
                         />
                     </div>
-                </div>
+                </motion.div>
             )}
             
             {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-                    <div className="flex">
-                        <div className="flex-shrink-0">
-                            <X className="h-4 w-4 text-red-400" aria-hidden="true" />
-                        </div>
-                        <div className="ml-3">
-                            <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
-                        </div>
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/50 rounded-2xl p-4"
+                >
+                    <div className="flex items-center gap-3">
+                        <X className="h-4 w-4 text-red-500" />
+                        <p className="text-xs font-bold text-red-600 dark:text-red-400">{error}</p>
                     </div>
-                </div>
+                </motion.div>
             )}
 
             <div>
-              <Button type="submit" className="w-full flex justify-center py-2.5" disabled={isLoading}>
+              <Button type="submit" className="w-full py-4 rounded-2xl text-sm font-bold" disabled={isLoading}>
                 {isLoading ? (
                     <span className="flex items-center gap-2">
                         <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -172,22 +206,27 @@ export const Login: React.FC = () => {
                         </svg>
                         Processing...
                     </span>
-                ) : (isLogin ? 'Sign in' : 'Sign up')}
+                ) : (
+                  <span className="flex items-center gap-2">
+                    {isLogin ? 'Sign in' : 'Create account'}
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                )}
               </Button>
             </div>
           </form>
 
-          <div className="mt-6">
+          <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border-color" />
+                <div className="w-full border-t border-border-light dark:border-border-dark" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-surface text-text-secondary">Or continue with</span>
+              <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
+                <span className="px-4 bg-card-light dark:bg-card-dark text-text-secondary-light dark:text-text-secondary-dark opacity-40">Or continue with</span>
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-8 grid grid-cols-1 gap-4">
               <button
                 onClick={async () => {
                   setError('');
@@ -201,7 +240,7 @@ export const Login: React.FC = () => {
                   }
                 }}
                 disabled={isLoading}
-                className="w-full flex justify-center items-center gap-3 py-2.5 px-4 border border-border-color rounded-md shadow-sm bg-background text-sm font-medium text-text-primary hover:bg-brand-50/50 dark:hover:bg-brand-900/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors disabled:opacity-50"
+                className="w-full flex justify-center items-center gap-3 py-3.5 px-4 border border-border-light dark:border-border-dark rounded-2xl bg-background-light dark:bg-background-dark text-sm font-bold hover:bg-border-light dark:hover:bg-border-dark transition-all disabled:opacity-50 active:scale-95 shadow-sm"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path
@@ -224,18 +263,9 @@ export const Login: React.FC = () => {
                 <span>Google</span>
               </button>
             </div>
-
-            <div className="mt-6 text-center">
-               <button 
-                onClick={() => { setIsLogin(!isLogin); setError(''); }}
-                className="text-brand-600 hover:text-brand-500 font-medium transition-colors"
-               >
-                 {isLogin ? 'Create new account' : 'Already have an account? Sign in'}
-               </button>
-            </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

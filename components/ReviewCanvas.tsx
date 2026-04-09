@@ -812,7 +812,12 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
         );
       case AssetType.PDF:
         if (isPdfLoading) {
-            return <div className="text-text-primary animate-pulse">Loading PDF...</div>;
+            return (
+                <div className="flex flex-col items-center justify-center p-20 text-text-secondary-light dark:text-text-secondary-dark">
+                    <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+                    <p className="font-bold text-sm uppercase tracking-widest opacity-60">Loading PDF...</p>
+                </div>
+            );
         }
         return (
             <div className="flex flex-col gap-4 bg-surface/10 p-4 rounded shadow-inner">
@@ -830,9 +835,9 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
         return (
           <div className="absolute top-0 left-0 w-full h-full bg-surface border border-border-color shadow-lg">
             {isIframeLoading && !iframeError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background z-10">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
-                <span className="ml-2 text-text-secondary">Loading creative...</span>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background-light dark:bg-background-dark z-10">
+                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4"></div>
+                <span className="text-[10px] font-bold text-text-secondary-light dark:text-text-secondary-dark uppercase tracking-widest opacity-60">Loading creative...</span>
               </div>
             )}
             {iframeError && (
@@ -949,7 +954,7 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
                   {/* Drawing Preview Box */}
                   {isDrawing && startPos && currentPos && (
                     <div 
-                      className="absolute border-2 border-annotation bg-annotation/50 pointer-events-none z-30"
+                      className="absolute border-2 border-primary bg-primary/10 rounded-lg shadow-lg ring-4 ring-primary/5 pointer-events-none z-30"
                       style={{
                         left: `${Math.min(startPos.x, currentPos.x)}%`,
                         top: `${Math.min(startPos.y, currentPos.y)}%`,
@@ -979,7 +984,7 @@ export const ReviewCanvas = forwardRef<ReviewCanvasHandle, ReviewCanvasProps>(({
                 {/* Drawing Preview Box */}
                 {isDrawing && startPos && currentPos && (
                   <div 
-                    className="absolute border-2 border-annotation bg-annotation/20 pointer-events-none z-30"
+                    className="absolute border-2 border-primary bg-primary/10 rounded-lg shadow-lg ring-4 ring-primary/5 pointer-events-none z-30"
                     style={{
                       left: `${Math.min(startPos.x, currentPos.x)}%`,
                       top: `${Math.min(startPos.y, currentPos.y)}%`,

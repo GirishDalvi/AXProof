@@ -4,6 +4,7 @@ import { ReviewCanvas } from './ReviewCanvas';
 import { AnnotationSidebar } from './AnnotationSidebar';
 import { X, Play, Pause, MessageSquare, Hand, MousePointer2, ZoomIn, ZoomOut, Maximize, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Button } from './ui/Button';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface CompareViewProps {
   projectVersions: AssetVersion[];
@@ -80,7 +81,6 @@ export const CompareView: React.FC<CompareViewProps> = ({
       if (tool === 'PAN') {
           setIsPanning(true);
           setPanStart({ x: e.clientX, y: e.clientY });
-          // Capture initial scroll position from one of the containers (assuming synced)
           if (leftScrollRef.current) {
               setScrollStart({ 
                   left: leftScrollRef.current.scrollLeft, 
@@ -116,18 +116,6 @@ export const CompareView: React.FC<CompareViewProps> = ({
 
   const handleMouseUp = () => setIsPanning(false);
 
-  // Sync scroll on manual scroll (e.g. trackpad)
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>, targetRef: React.RefObject<HTMLDivElement | null>) => {
-      if (isPanning) return; // Managed by mouse move
-      const target = e.currentTarget;
-      if (targetRef.current) {
-          if (Math.abs(targetRef.current.scrollTop - target.scrollTop) > 1 || Math.abs(targetRef.current.scrollLeft - target.scrollLeft) > 1) {
-            targetRef.current.scrollTop = target.scrollTop;
-            targetRef.current.scrollLeft = target.scrollLeft;
-          }
-      }
-  };
-
   // Zoom Handlers
   const handleZoomIn = () => setZoom(z => Math.min(z + 0.25, 4));
   const handleZoomOut = () => setZoom(z => Math.max(z - 0.25, 0.25));
@@ -140,20 +128,15 @@ export const CompareView: React.FC<CompareViewProps> = ({
         if (!isVisible) return null;
 
         const isActive = activeAnnotationId === ann.id;
-        const colorClass = isActive 
-            ? 'border-annotation bg-annotation/50 z-30' 
-            : (ann.status === AnnotationStatus.RESOLVED ? 'border-green-400 bg-green-400/10 z-10' : 'border-annotation/80 bg-annotation/20 z-20');
         
-        const pinColorClass = isActive
-            ? 'bg-annotation border-white text-white scale-110 z-30'
-            : (ann.status === AnnotationStatus.RESOLVED ? 'bg-green-500 border-white text-white z-10' : 'bg-annotation border-white text-white z-20');
-
         if (ann.type === AnnotationType.BOX && ann.width && ann.height) {
            return (
                <div
                    key={ann.id}
                    onClick={(e) => { e.stopPropagation(); handleAnnotationClick(ann.id, side); }}
-                   className={`annotation-pin absolute border-2 cursor-pointer hover:border-annotation transition-all pointer-events-auto ${colorClass}`}
+                   className={`annotation-pin absolute border-2 cursor-pointer transition-all pointer-events-auto rounded-lg
+                    ${isActive ? 'border-primary bg-primary/10 shadow-xl ring-4 ring-primary/5 z-30' : (ann.status === AnnotationStatus.RESOLVED ? 'border-status-approved-text bg-status-approved-bg/10 opacity-60 z-10' : 'border-primary/60 bg-primary/5 z-20 hover:border-primary')}
+                   `}
                    style={{ 
                        left: `${ann.x}%`, 
                        top: `${ann.y}%`, 
@@ -168,10 +151,12 @@ export const CompareView: React.FC<CompareViewProps> = ({
          <div
            key={ann.id}
            onClick={(e) => { e.stopPropagation(); handleAnnotationClick(ann.id, side); }}
-           className={`annotation-pin absolute transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full border-2 shadow-sm cursor-pointer hover:scale-110 transition-transform pointer-events-auto ${pinColorClass}`}
+           className={`annotation-pin absolute transform -translate-x-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-xl border-2 shadow-lg cursor-pointer transition-all pointer-events-auto font-bold text-[10px]
+            ${isActive ? 'bg-primary border-white text-white scale-110 z-30 ring-4 ring-primary/20' : (ann.status === AnnotationStatus.RESOLVED ? 'bg-status-approved-text border-white text-white opacity-60 z-10' : 'bg-card-light dark:bg-card-dark border-primary text-primary z-20 hover:scale-110')}
+           `}
            style={{ left: `${ann.x}%`, top: `${ann.y}%` }}
          >
-           <span className="font-bold text-[10px]">{ann.pinNumber}</span>
+           {ann.pinNumber}
          </div>
        );
     });
@@ -181,69 +166,74 @@ export const CompareView: React.FC<CompareViewProps> = ({
 
   return (
     <div 
-        className="fixed inset-0 z-50 bg-background flex flex-col"
+        className="fixed inset-0 z-50 bg-background-light dark:bg-background-dark flex flex-col font-sans"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
     >
       {/* Compare Header */}
-      <div className="h-14 bg-surface border-b border-border-color flex items-center justify-between px-4 text-text-primary shrink-0">
-        <div className="flex items-center gap-4">
-            <span className="font-semibold text-lg hidden md:block">Compare Mode</span>
+      <div className="h-16 bg-card-light dark:bg-card-dark border-b border-border-light dark:border-border-dark flex items-center justify-between px-6 text-text-primary-light dark:text-text-primary-dark shrink-0 shadow-sm z-20">
+        <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Maximize className="w-4 h-4 text-primary" />
+                </div>
+                <span className="font-bold text-lg tracking-tight hidden md:block">Compare Mode</span>
+            </div>
             
             {/* Version Selectors */}
-            <div className="flex items-center gap-2 bg-background rounded-lg p-1">
+            <div className="flex items-center gap-2 bg-background-light dark:bg-background-dark rounded-2xl p-1.5 border border-border-light dark:border-border-dark">
                 <select 
                     value={leftId} 
                     onChange={(e) => setLeftId(e.target.value)}
-                    className="bg-transparent text-sm border-none focus:ring-0 cursor-pointer text-text-primary max-w-[120px]"
+                    className="bg-transparent text-xs font-bold border-none focus:ring-0 cursor-pointer text-text-primary-light dark:text-text-primary-dark max-w-[100px] uppercase tracking-wider"
                 >
                     {projectVersions.map(v => (
-                        <option key={v.id} value={v.id} className="text-text-primary bg-surface">v{v.versionNumber}</option>
+                        <option key={v.id} value={v.id} className="text-text-primary-light dark:text-text-primary-dark bg-card-light dark:bg-card-dark">v{v.versionNumber}</option>
                     ))}
                 </select>
-                <span className="text-text-secondary text-xs font-bold">VS</span>
+                <span className="text-text-secondary-light dark:text-text-secondary-dark text-[10px] font-black opacity-30">VS</span>
                 <select 
                     value={rightId} 
                     onChange={(e) => setRightId(e.target.value)}
-                    className="bg-transparent text-sm border-none focus:ring-0 cursor-pointer text-text-primary max-w-[120px]"
+                    className="bg-transparent text-xs font-bold border-none focus:ring-0 cursor-pointer text-text-primary-light dark:text-text-primary-dark max-w-[100px] uppercase tracking-wider"
                 >
                     {projectVersions.map(v => (
-                        <option key={v.id} value={v.id} className="text-text-primary bg-surface">v{v.versionNumber}</option>
+                        <option key={v.id} value={v.id} className="text-text-primary-light dark:text-text-primary-dark bg-card-light dark:bg-card-dark">v{v.versionNumber}</option>
                     ))}
                 </select>
             </div>
         </div>
 
         {/* Center Toolbar */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
              {/* Playback */}
             {(leftVersion.assetType === 'VIDEO' || rightVersion.assetType === 'VIDEO') && (
-                <div className="flex items-center gap-2 mr-4 bg-background rounded-lg p-1">
+                <div className="flex items-center gap-3 bg-background-light dark:bg-background-dark rounded-2xl p-1.5 border border-border-light dark:border-border-dark">
                      <button 
                         onClick={() => setIsPlaying(!isPlaying)} 
-                        className="p-1.5 rounded bg-brand-600 hover:bg-brand-500 text-white"
+                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all"
                      >
                         {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                      </button>
-                     <span className="text-xs font-mono w-16 text-center text-text-primary">
+                     <span className="text-xs font-bold font-mono w-16 text-center text-text-primary-light dark:text-text-primary-dark">
                          {formatTime(currentTime)}
                      </span>
                 </div>
             )}
 
              {/* Tools */}
-             <div className="flex items-center bg-background rounded-lg p-1">
+             <div className="flex items-center bg-background-light dark:bg-background-dark rounded-2xl p-1.5 border border-border-light dark:border-border-dark">
                  <button 
                     onClick={() => setTool('POINTER')}
-                    className={`p-1.5 rounded transition-colors ${tool === 'POINTER' ? 'bg-surface text-brand-500 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${tool === 'POINTER' ? 'bg-card-light dark:bg-card-dark text-primary shadow-soft border border-primary/10' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-primary'}`}
                     title="Pointer"
                  >
                      <MousePointer2 className="w-4 h-4" />
                  </button>
                  <button 
                     onClick={() => setTool('PAN')}
-                    className={`p-1.5 rounded transition-colors ${tool === 'PAN' ? 'bg-surface text-brand-500 shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`w-8 h-8 flex items-center justify-center rounded-xl transition-all ${tool === 'PAN' ? 'bg-card-light dark:bg-card-dark text-primary shadow-soft border border-primary/10' : 'text-text-secondary-light dark:text-text-secondary-dark hover:text-primary'}`}
                     title="Hand Tool"
                  >
                      <Hand className="w-4 h-4" />
@@ -251,36 +241,39 @@ export const CompareView: React.FC<CompareViewProps> = ({
              </div>
 
              {/* Zoom */}
-             <div className="flex items-center bg-background rounded-lg p-1">
-                <button onClick={handleZoomOut} className="p-1.5 rounded text-text-secondary hover:text-text-primary"><ZoomOut className="w-4 h-4" /></button>
-                <span className="text-xs font-mono w-10 text-center text-text-primary">{Math.round(zoom * 100)}%</span>
-                <button onClick={handleZoomIn} className="p-1.5 rounded text-text-secondary hover:text-text-primary"><ZoomIn className="w-4 h-4" /></button>
-                <button onClick={handleZoomReset} className="p-1.5 rounded text-text-secondary hover:text-text-primary"><Maximize className="w-3 h-3" /></button>
+             <div className="flex items-center bg-background-light dark:bg-background-dark rounded-2xl p-1.5 border border-border-light dark:border-border-dark">
+                <button onClick={handleZoomOut} className="w-8 h-8 flex items-center justify-center rounded-xl text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors"><ZoomOut className="w-4 h-4" /></button>
+                <span className="text-[10px] font-bold font-mono w-12 text-center text-text-primary-light dark:text-text-primary-dark">{Math.round(zoom * 100)}%</span>
+                <button onClick={handleZoomIn} className="w-8 h-8 flex items-center justify-center rounded-xl text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors"><ZoomIn className="w-4 h-4" /></button>
+                <button onClick={handleZoomReset} className="w-8 h-8 flex items-center justify-center rounded-xl text-text-secondary-light dark:text-text-secondary-dark hover:text-primary transition-colors"><Maximize className="w-3.5 h-3.5" /></button>
             </div>
         </div>
 
-        <div className="flex items-center gap-2">
-            <Button 
-                variant={isLeftSidebarOpen ? "primary" : "secondary"} 
-                size="sm" 
-                onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
-                title="Toggle Left Comments"
-                className="hidden lg:flex"
-            >
-                {isLeftSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-            </Button>
-             <Button 
-                variant={isRightSidebarOpen ? "primary" : "secondary"} 
-                size="sm" 
-                onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-                title="Toggle Right Comments"
-            >
-                {isRightSidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
-            </Button>
+        <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 mr-2">
+                <Button 
+                    variant={isLeftSidebarOpen ? "primary" : "secondary"} 
+                    size="sm" 
+                    onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
+                    title="Toggle Left Comments"
+                    className="hidden lg:flex rounded-xl"
+                >
+                    {isLeftSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+                </Button>
+                <Button 
+                    variant={isRightSidebarOpen ? "primary" : "secondary"} 
+                    size="sm" 
+                    onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+                    title="Toggle Right Comments"
+                    className="rounded-xl"
+                >
+                    {isRightSidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+                </Button>
+            </div>
 
-            <div className="h-6 w-px bg-border-color mx-2" />
+            <div className="h-8 w-px bg-border-light dark:bg-border-dark mx-1" />
 
-            <Button variant="secondary" size="sm" onClick={onClose}>
+            <Button variant="secondary" size="sm" onClick={onClose} className="rounded-xl font-bold px-4">
                 <X className="w-4 h-4 mr-2" /> Exit
             </Button>
         </div>
@@ -290,39 +283,46 @@ export const CompareView: React.FC<CompareViewProps> = ({
       <div className="flex-1 flex overflow-hidden relative">
         
         {/* Left Sidebar */}
-        {isLeftSidebarOpen && (
-             <div className="w-80 bg-surface border-r border-border-color flex flex-col shrink-0 animate-in slide-in-from-left-10 duration-200 z-10">
-                <div className="p-3 bg-background border-b border-border-color font-medium text-sm text-center text-text-primary">
-                   Version {leftVersion.versionNumber} Comments
-                </div>
-                <div className="flex-1 overflow-hidden relative">
-                    <AnnotationSidebar 
-                        className="w-full h-full border-none"
-                        annotations={leftAnns}
-                        activeAnnotationId={activeAnnotationId}
-                        onAnnotationClick={(id) => handleAnnotationClick(id, 'LEFT')}
-                        onNewCommentSubmit={() => {}}
-                        isAddingNew={false}
-                        onCancelNew={() => {}}
-                        readOnly={true}
-                        currentVersion={leftVersion}
-                    />
-                </div>
-             </div>
-        )}
+        <AnimatePresence>
+            {isLeftSidebarOpen && (
+                <motion.div 
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 320, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    className="bg-card-light dark:bg-card-dark border-r border-border-light dark:border-border-dark flex flex-col shrink-0 z-10 overflow-hidden"
+                >
+                    <div className="p-4 bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark font-bold text-[10px] uppercase tracking-widest text-center text-text-secondary-light dark:text-text-secondary-dark">
+                    Version {leftVersion.versionNumber} Comments
+                    </div>
+                    <div className="flex-1 overflow-hidden relative">
+                        <AnnotationSidebar 
+                            className="w-full h-full border-none"
+                            annotations={leftAnns}
+                            activeAnnotationId={activeAnnotationId}
+                            onAnnotationClick={(id) => handleAnnotationClick(id, 'LEFT')}
+                            onNewCommentSubmit={() => {}}
+                            isAddingNew={false}
+                            onCancelNew={() => {}}
+                            readOnly={true}
+                            currentVersion={leftVersion}
+                        />
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
 
         {/* Canvases Area */}
         <div 
-            className="flex-1 flex flex-col min-w-0"
+            className="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark"
             onMouseDown={handleMouseDown}
         >
             <div className="flex-1 flex overflow-hidden">
                 {/* Left Pane */}
-                <div className="flex-1 border-r border-border-color relative flex flex-col">
-                    <div className="absolute top-4 left-4 z-10 bg-black/50 text-white px-2 py-1 rounded text-xs backdrop-blur-sm pointer-events-none">
+                <div className="flex-1 border-r border-border-light dark:border-border-dark relative flex flex-col">
+                    <div className="absolute top-6 left-6 z-10 bg-card-light/80 dark:bg-card-dark/80 text-text-primary-light dark:text-text-primary-dark px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest backdrop-blur-md shadow-soft border border-border-light dark:border-border-dark pointer-events-none">
                         Version {leftVersion.versionNumber}
                     </div>
-                    <div className="flex-1 relative bg-background">
+                    <div className="flex-1 relative">
                         <ReviewCanvas
                             scrollRef={leftScrollRef}
                             className={tool === 'PAN' ? 'cursor-grab active:cursor-grabbing' : ''}
@@ -336,15 +336,6 @@ export const CompareView: React.FC<CompareViewProps> = ({
                             readOnly={true}
                             zoom={zoom}
                         >
-                            {/* We handle scroll syncing by attaching scroll listener to the inner div via ReviewCanvas prop modification? 
-                                Currently ReviewCanvas doesn't expose onScroll. 
-                                We'll use the ref's native onScroll event, but we need to attach it.
-                                React 'onScroll' on the ReviewCanvas component wrapper works if we bubble it up, 
-                                but ReviewCanvas's overflow div is internal.
-                                We can cheat and attach the listener in a useEffect here or add onScroll to ReviewCanvas props.
-                                For now, relying on the 'isPanning' mouse move logic handles the main "Hand Tool" requirement. 
-                                Trackpad syncing is secondary but good to have.
-                            */}
                             {renderAnnotations(leftId, leftVersion, 'LEFT')}
                         </ReviewCanvas>
                     </div>
@@ -352,10 +343,10 @@ export const CompareView: React.FC<CompareViewProps> = ({
 
                 {/* Right Pane */}
                 <div className="flex-1 relative flex flex-col">
-                    <div className="absolute top-4 left-4 z-10 bg-black/50 text-white px-2 py-1 rounded text-xs backdrop-blur-sm pointer-events-none">
+                    <div className="absolute top-6 left-6 z-10 bg-card-light/80 dark:bg-card-dark/80 text-text-primary-light dark:text-text-primary-dark px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-widest backdrop-blur-md shadow-soft border border-border-light dark:border-border-dark pointer-events-none">
                         Version {rightVersion.versionNumber}
                     </div>
-                    <div className="flex-1 relative bg-background">
+                    <div className="flex-1 relative">
                         <ReviewCanvas
                             scrollRef={rightScrollRef}
                             className={tool === 'PAN' ? 'cursor-grab active:cursor-grabbing' : ''}
@@ -377,26 +368,33 @@ export const CompareView: React.FC<CompareViewProps> = ({
         </div>
 
         {/* Right Sidebar */}
-        {isRightSidebarOpen && (
-             <div className="w-80 bg-surface border-l border-border-color flex flex-col shrink-0 animate-in slide-in-from-right-10 duration-200 z-10">
-                <div className="p-3 bg-background border-b border-border-color font-medium text-sm text-center text-text-primary">
-                   Version {rightVersion.versionNumber} Comments
-                </div>
-                <div className="flex-1 overflow-hidden relative">
-                    <AnnotationSidebar 
-                        className="w-full h-full border-none"
-                        annotations={rightAnns}
-                        activeAnnotationId={activeAnnotationId}
-                        onAnnotationClick={(id) => handleAnnotationClick(id, 'RIGHT')}
-                        onNewCommentSubmit={() => {}}
-                        isAddingNew={false}
-                        onCancelNew={() => {}}
-                        readOnly={true}
-                        currentVersion={rightVersion}
-                    />
-                </div>
-             </div>
-        )}
+        <AnimatePresence>
+            {isRightSidebarOpen && (
+                <motion.div 
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 320, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    className="bg-card-light dark:bg-card-dark border-l border-border-light dark:border-border-dark flex flex-col shrink-0 z-10 overflow-hidden"
+                >
+                    <div className="p-4 bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark font-bold text-[10px] uppercase tracking-widest text-center text-text-secondary-light dark:text-text-secondary-dark">
+                    Version {rightVersion.versionNumber} Comments
+                    </div>
+                    <div className="flex-1 overflow-hidden relative">
+                        <AnnotationSidebar 
+                            className="w-full h-full border-none"
+                            annotations={rightAnns}
+                            activeAnnotationId={activeAnnotationId}
+                            onAnnotationClick={(id) => handleAnnotationClick(id, 'RIGHT')}
+                            onNewCommentSubmit={() => {}}
+                            isAddingNew={false}
+                            onCancelNew={() => {}}
+                            readOnly={true}
+                            currentVersion={rightVersion}
+                        />
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
       </div>
     </div>
   );
