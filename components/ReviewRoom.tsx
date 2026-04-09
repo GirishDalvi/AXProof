@@ -6,13 +6,13 @@ import { AnnotationSidebar } from './AnnotationSidebar';
 import { Button } from './ui/Button';
 import { CompareView } from './CompareView';
 import { Annotation, AnnotationStatus, AnnotationType, AssetFile, AssetType, Attachment } from '../types';
-import { ArrowLeft, Play, Pause, Layers, MousePointer2, BoxSelect, CheckCircle, Lock, AlertCircle, FileDown, GitBranch, Send, Upload, X, ZoomIn, ZoomOut, Maximize, FileText, Image as ImageIcon, FileCode, Film, Package, Globe, Link as LinkIcon, Clock, Hourglass, Loader2, MoreVertical, Trash2, ExternalLink, MapPin, Square, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Layers, MousePointer2, BoxSelect, CheckCircle, Lock, AlertCircle, FileDown, GitBranch, Send, Upload, X, ZoomIn, ZoomOut, Maximize, FileText, Image as ImageIcon, FileCode, Film, Package, Globe, Link as LinkIcon, Clock, Hourglass, Loader2, MoreVertical, Trash2, ExternalLink } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { db } from '../db';
 
 export const ReviewRoom: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getProject, addAnnotation, annotations, approveVersion, requestChanges, markInReview, markWaitingForReview, uploadNewVersion, currentUser, saveFileToApp, rehydrateAsset, deleteProject, warmupConnection } = useAXProof();
+  const { getProject, addAnnotation, annotations, approveVersion, requestChanges, markInReview, markWaitingForReview, uploadNewVersion, currentUser, saveFileToApp, uploadToVercelBlob, rehydrateAsset, deleteProject, warmupConnection } = useAXProof();
   
   const project = getProject(id || '');
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
@@ -232,6 +232,24 @@ export const ReviewRoom: React.FC = () => {
     } catch (e) {
         console.error("Save failed", e);
         alert("Failed to save file to app.");
+    }
+  };
+
+  const handleSaveToVercelBlob = async () => {
+    try {
+        let blob: Blob | null = await db.getAsset(version.id);
+        if (!blob) {
+            const response = await fetch(version.url, { credentials: 'include' });
+            blob = await response.blob();
+        }
+        
+        if (blob) {
+            const result = await uploadToVercelBlob(blob, version.fileName || `${project.name}_v${version.versionNumber}`);
+            alert(`File saved to Vercel Blob! URL: ${result.url}`);
+        }
+    } catch (e: any) {
+        console.error("Vercel Blob upload failed", e);
+        alert(`Failed to save to Vercel Blob: ${e.message}`);
     }
   };
 
@@ -497,96 +515,123 @@ export const ReviewRoom: React.FC = () => {
       )}
 
       {/* Top Bar */}
-      <div className="h-20 bg-surface border-b border-border-color flex items-center justify-between px-8 shrink-0 z-50 shadow-sm backdrop-blur-md bg-surface/90 sticky top-0">
-        <div className="flex items-center gap-8">
-          <Link to="/" className="p-2.5 hover:bg-brand-50 dark:hover:bg-brand-500/10 rounded-xl transition-all group">
-            <ArrowLeft className="w-5 h-5 text-text-secondary group-hover:text-brand-500 transition-colors" />
+      <div className="h-16 bg-surface border-b border-border-color flex items-center justify-between px-4 shrink-0 z-10">
+        <div className="flex items-center gap-4">
+          <Link to="/" className="text-text-secondary hover:text-text-primary">
+            <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="flex flex-col">
-            <h1 className="text-xl font-black text-text-primary tracking-tight truncate max-w-[300px] flex items-center gap-3">
+          <div>
+            <h1 className="font-semibold text-text-primary flex items-center gap-2">
                 {project.name}
+                {version.files && version.files.length > 0 && (
+                  <span title="Package/ZIP" className="flex items-center">
+                    <Package className="w-4 h-4 text-text-secondary" />
+                  </span>
+                )}
+                {isLiveUrl && (
+                  <span title="Live Website" className="flex items-center">
+                    <Globe className="w-4 h-4 text-blue-500" />
+                  </span>
+                )}
                 {isApproved && (
-                    <span className="bg-green-50 text-green-700 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800/50">
-                        Approved
+                    <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" /> Approved v{version.versionNumber}
                     </span>
                 )}
+                {isChangesRequired && (
+                    <span className="bg-brand-100 text-brand-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> Changes Required v{version.versionNumber}
+                    </span>
+                )}
+                {isWaitingForReview && (
+                    <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Hourglass className="w-3 h-3" /> Waiting for Review v{version.versionNumber}
+                    </span>
+                )}
+                {/* Show Revision Indicator for new versions */}
+                {!isLocked && previousVersion && (
+                     <span className="bg-brand-50 text-brand-600 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 border border-brand-100">
+                        <GitBranch className="w-3 h-3" /> Revision of v{previousVersion.versionNumber}
+                     </span>
+                )}
             </h1>
-            <div className="flex items-center gap-3 mt-0.5">
-                <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary opacity-60">{project.clientName}</span>
-                <span className="w-1 h-1 rounded-full bg-border-color" />
-                <div className="flex items-center gap-2">
-                    <select 
-                        value={currentVersionId || ''} 
-                        onChange={(e) => setCurrentVersionId(e.target.value)}
-                        className="bg-brand-50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20 rounded-lg px-2.5 py-0.5 text-[10px] font-black font-mono text-brand-600 dark:text-brand-400 outline-none cursor-pointer hover:border-brand-300 transition-all"
-                    >
-                        {project.versions.map(v => (
-                            <option key={v.id} value={v.id}>V{v.versionNumber}</option>
-                        ))}
-                    </select>
-                </div>
+            <div className="flex items-center gap-2 text-xs text-text-secondary">
+              <span>{project.clientName}</span>
+              <span className="w-1 h-1 rounded-full bg-border-color" />
+              <select 
+                value={currentVersionId || ''}
+                onChange={(e) => setCurrentVersionId(e.target.value)}
+                className="bg-transparent border-none p-0 text-text-primary font-medium focus:ring-0 cursor-pointer"
+              >
+                {project.versions.map(v => (
+                  <option key={v.id} value={v.id} className="bg-surface">
+                    v{v.versionNumber} {v.status === 'APPROVED' ? '(Approved)' : v.status === 'CHANGES_REQUIRED' ? '(Changes Req.)' : v.status === 'WAITING_FOR_REVIEW' ? '(Waiting)' : '(In Review)'}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
 
         {/* Toolbar - Center */}
-        <div className="flex items-center bg-background/50 p-1.5 rounded-2xl border border-border-color shadow-inner">
+        <div className="flex items-center gap-2">
             {!isLocked ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center bg-background rounded-lg p-1 border border-border-color">
                     <button 
                     onClick={() => setTool('INTERACT')}
-                    className={`p-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 ${tool === 'INTERACT' ? 'bg-surface text-brand-600 shadow-md ring-1 ring-black/5 dark:ring-white/5' : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'}`}
+                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === 'INTERACT' ? 'bg-surface shadow text-brand-600' : 'text-text-secondary hover:text-text-primary'}`}
                     title="Interact Tool"
                     >
                     <MousePointer2 className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider pr-1">Interact</span>
                     </button>
                     <button 
                     onClick={() => setTool(AnnotationType.PIN)}
-                    className={`p-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 ${tool === AnnotationType.PIN ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'}`}
+                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === AnnotationType.PIN ? 'bg-surface shadow text-annotation' : 'text-text-secondary hover:text-text-primary'}`}
                     title="Pin Tool"
                     >
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider pr-1">Pin</span>
+                    <div className="w-4 h-4 rounded-full border-2 border-current flex items-center justify-center text-[8px] font-bold">1</div>
                     </button>
                     <button 
                     onClick={() => setTool(AnnotationType.BOX)}
-                    className={`p-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 ${tool === AnnotationType.BOX ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'}`}
+                    className={`p-1.5 rounded-md text-xs font-medium flex items-center gap-2 transition-colors ${tool === AnnotationType.BOX ? 'bg-surface shadow text-annotation' : 'text-text-secondary hover:text-text-primary'}`}
                     title="Box Tool"
                     >
-                    <Square className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider pr-1">Box</span>
+                    <BoxSelect className="w-4 h-4" />
                     </button>
                 </div>
             ) : (
-                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-text-secondary bg-background px-4 py-2 rounded-xl border border-border-color opacity-70">
-                    <Lock className="w-3.5 h-3.5" /> Locked
+                <div className="flex items-center gap-2 text-sm text-text-secondary bg-background px-3 py-1.5 rounded-md border border-border-color">
+                    <Lock className="w-4 h-4" /> Locked
                 </div>
             )}
 
-            <div className="w-px h-6 bg-border-color mx-2" />
-
             {/* Zoom Controls */}
-            <div className="flex items-center gap-1">
-                <button onClick={handleZoomOut} className="p-2.5 text-text-secondary hover:text-text-primary hover:bg-surface/50 rounded-xl transition-all"><Minus className="w-4 h-4" /></button>
-                <span className="text-[10px] font-black font-mono w-14 text-center text-text-primary opacity-80">{Math.round(zoom * 100)}%</span>
-                <button onClick={handleZoomIn} className="p-2.5 text-text-secondary hover:text-text-primary hover:bg-surface/50 rounded-xl transition-all"><Plus className="w-4 h-4" /></button>
+            <div className="flex items-center bg-background rounded-lg p-1 border border-border-color">
+                <button onClick={handleZoomOut} className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Zoom Out">
+                    <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="text-xs font-mono w-10 text-center text-text-primary">{Math.round(zoom * 100)}%</span>
+                <button onClick={handleZoomIn} className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Zoom In">
+                    <ZoomIn className="w-4 h-4" />
+                </button>
+                <button onClick={handleZoomReset} className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface transition-colors" title="Reset Zoom">
+                    <Maximize className="w-3 h-3" />
+                </button>
             </div>
 
-            <div className="w-px h-6 bg-border-color mx-2" />
-
             {/* Annotation Toggle */}
-            <button 
-                onClick={() => setShowAnnotations(!showAnnotations)} 
-                className={`p-2.5 rounded-xl transition-all duration-200 flex items-center gap-2 ${showAnnotations ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'}`} 
-                title={showAnnotations ? "Hide Annotations" : "Show Annotations"}
-            >
-                <Layers className="w-4 h-4" />
-                <span className="text-[10px] font-bold uppercase tracking-wider pr-1">Layers</span>
-            </button>
+            <div className="flex items-center bg-background rounded-lg p-1 border border-border-color">
+                <button 
+                  onClick={() => setShowAnnotations(!showAnnotations)} 
+                  className={`p-1.5 rounded-md transition-colors ${showAnnotations ? 'bg-surface shadow text-brand-600' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} 
+                  title={showAnnotations ? "Hide Annotations" : "Show Annotations"}
+                >
+                    <Layers className="w-4 h-4" />
+                </button>
+            </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
            {/* Upload New Version Input - Hidden */}
            <input 
              type="file" 
@@ -649,6 +694,12 @@ export const ReviewRoom: React.FC = () => {
                          >
                              <Package className="w-3 h-3" /> Save Original to App
                          </button>
+                         <button 
+                             onClick={handleSaveToVercelBlob}
+                             className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-background rounded flex items-center gap-2"
+                         >
+                             <ExternalLink className="w-3 h-3 text-blue-500" /> Save to Vercel Blob
+                         </button>
                      </div>
                  </div>
              </div>
@@ -680,6 +731,12 @@ export const ReviewRoom: React.FC = () => {
                              className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-background rounded flex items-center gap-2"
                          >
                              <Package className="w-3 h-3" /> Save Original to App
+                         </button>
+                         <button 
+                             onClick={handleSaveToVercelBlob}
+                             className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-background rounded flex items-center gap-2"
+                         >
+                             <ExternalLink className="w-3 h-3 text-blue-500" /> Save to Vercel Blob
                          </button>
                      </div>
                  </div>
@@ -813,8 +870,8 @@ export const ReviewRoom: React.FC = () => {
                         <div
                             key={ann.id}
                             onClick={(e) => { e.stopPropagation(); handleAnnotationClick(ann.id); }}
-                            className={`annotation-pin absolute border-2 z-20 transition-all cursor-pointer flex items-start justify-start pointer-events-auto rounded-lg
-                              ${isActive ? 'border-orange-500 bg-orange-500/20 shadow-[0_0_20px_rgba(249,115,22,0.3)]' : 'border-orange-500/40 bg-orange-500/5 hover:border-orange-500 hover:bg-orange-500/10'}
+                            className={`annotation-pin absolute border-2 z-20 transition-colors cursor-pointer flex items-start justify-start pointer-events-auto
+                              ${isActive ? 'border-annotation bg-annotation/50' : 'border-annotation/80 bg-annotation/20 hover:border-annotation'}
                             `}
                             style={{ 
                                 left: `${ann.x}%`, 
@@ -823,7 +880,7 @@ export const ReviewRoom: React.FC = () => {
                                 height: `${ann.height}%` 
                             }}
                         >
-                            <span className={`flex items-center justify-center w-6 h-6 -mt-3 -ml-3 rounded-full text-[10px] font-black shadow-lg ring-2 ring-white dark:ring-surface transition-all ${isActive ? 'bg-orange-500 text-white scale-110' : 'bg-surface text-orange-500 border border-orange-500/20'}`}>
+                            <span className={`flex items-center justify-center w-6 h-6 -mt-3 -ml-3 rounded-full text-xs font-bold shadow-sm ${isActive ? 'bg-annotation text-white' : 'bg-surface text-annotation border border-annotation/20'}`}>
                                 {ann.pinNumber}
                             </span>
                         </div>
@@ -835,12 +892,12 @@ export const ReviewRoom: React.FC = () => {
                   <div
                     key={ann.id}
                     onClick={(e) => { e.stopPropagation(); handleAnnotationClick(ann.id); }}
-                    className={`annotation-pin absolute transform -translate-x-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full border-2 shadow-xl cursor-pointer transition-all hover:scale-110 z-20 pointer-events-auto ring-4 ring-transparent
-                      ${isActive ? 'bg-orange-500 border-white text-white scale-110 ring-orange-500/20' : 'bg-surface border-orange-500 text-orange-500'}
+                    className={`annotation-pin absolute transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full border-2 shadow-lg cursor-pointer transition-transform hover:scale-110 z-20 pointer-events-auto
+                      ${isActive ? 'bg-annotation border-white text-white scale-110' : 'bg-surface border-annotation text-annotation'}
                     `}
                     style={{ left: `${ann.x}%`, top: `${ann.y}%` }}
                   >
-                    <span className="font-black text-xs">{ann.pinNumber}</span>
+                    <span className="font-bold text-xs">{ann.pinNumber}</span>
                   </div>
                 );
               })}
@@ -850,7 +907,7 @@ export const ReviewRoom: React.FC = () => {
                  <>
                    {tempAnnotation.type === AnnotationType.BOX && tempAnnotation.width && tempAnnotation.height ? (
                       <div
-                        className="absolute border-2 border-orange-500 bg-orange-500/20 z-30 animate-pulse rounded-lg shadow-[0_0_20px_rgba(249,115,22,0.3)]"
+                        className="absolute border-2 border-annotation bg-annotation/50 z-30 animate-pulse"
                         style={{ 
                             left: `${tempAnnotation.x}%`, 
                             top: `${tempAnnotation.y}%`, 
@@ -858,16 +915,16 @@ export const ReviewRoom: React.FC = () => {
                             height: `${tempAnnotation.height}%` 
                         }}
                       >
-                         <div className="absolute -top-3 -left-3 w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-[10px] font-black shadow-lg ring-2 ring-white dark:ring-surface">
+                         <div className="absolute -top-3 -left-3 w-6 h-6 rounded-full bg-annotation text-white flex items-center justify-center text-xs font-bold">
                             {currentAnnotations.length + 1}
                          </div>
                       </div>
                    ) : (
                     <div
-                        className="absolute transform -translate-x-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full bg-orange-500 text-white border-2 border-white shadow-xl z-30 animate-pulse ring-4 ring-orange-500/20"
+                        className="absolute transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-annotation text-white border-2 border-white shadow-lg z-30 animate-pulse"
                         style={{ left: `${tempAnnotation.x}%`, top: `${tempAnnotation.y}%` }}
                     >
-                        <span className="font-black text-xs">{currentAnnotations.length + 1}</span>
+                        <span className="font-bold text-xs">{currentAnnotations.length + 1}</span>
                     </div>
                    )}
                  </>
@@ -920,76 +977,52 @@ export const ReviewRoom: React.FC = () => {
 
       {/* Submit Review Modal */}
       {isSubmitModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="bg-surface rounded-[2rem] shadow-2xl p-10 w-full max-w-3xl animate-in zoom-in-95 duration-300 border border-border-color">
-                <div className="flex justify-between items-center mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-brand-500 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/20">
-                            <CheckCircle className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="text-2xl font-black text-text-primary tracking-tight">Submit Review</h3>
-                            <p className="text-xs text-text-secondary opacity-60">Complete your review for v{version.versionNumber}</p>
-                        </div>
-                    </div>
-                    <button onClick={() => setIsSubmitModalOpen(false)} className="p-2 text-text-secondary hover:text-text-primary hover:bg-background rounded-xl transition-all">
-                        <X className="w-6 h-6" />
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-surface rounded-xl shadow-2xl p-6 w-full max-w-3xl border border-border-color">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-text-primary">Submit Review</h3>
+                    <button onClick={() => setIsSubmitModalOpen(false)} className="text-text-secondary hover:text-text-primary">
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
+                <p className="text-text-secondary text-sm mb-6">
+                    You are about to complete your review for <b>v{version.versionNumber}</b>. 
+                    Select the outcome below.
+                </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <button 
                         onClick={handleMarkWaitingForReview}
-                        className="flex items-center gap-5 p-6 rounded-3xl border-2 border-transparent bg-purple-50 dark:bg-purple-900/10 hover:bg-purple-100 dark:hover:bg-purple-900/20 hover:border-purple-200 dark:hover:border-purple-800 text-purple-700 dark:text-purple-400 transition-all group text-left"
+                        className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-transparent bg-purple-50 hover:bg-purple-100 hover:border-purple-200 text-purple-700 transition-all group"
                     >
-                        <div className="w-14 h-14 bg-white dark:bg-surface rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                            <Hourglass className="w-7 h-7" />
-                        </div>
-                        <div>
-                            <span className="block font-black text-lg tracking-tight">Waiting for Review</span>
-                            <span className="text-xs opacity-60 font-medium">Ready for others to review</span>
-                        </div>
+                        <Hourglass className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
+                        <span className="font-semibold text-sm text-center">Waiting for Review</span>
+                        <span className="text-xs opacity-75 mt-1 text-center">Ready for review</span>
                     </button>
                     <button 
                         onClick={handleMarkInReview}
-                        className="flex items-center gap-5 p-6 rounded-3xl border-2 border-transparent bg-blue-50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-800 text-blue-700 dark:text-blue-400 transition-all group text-left"
+                        className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-transparent bg-blue-50 hover:bg-blue-100 hover:border-blue-200 text-blue-700 transition-all group"
                     >
-                        <div className="w-14 h-14 bg-white dark:bg-surface rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                            <Clock className="w-7 h-7" />
-                        </div>
-                        <div>
-                            <span className="block font-black text-lg tracking-tight">In Review</span>
-                            <span className="text-xs opacity-60 font-medium">Mark as actively reviewing</span>
-                        </div>
+                        <Clock className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
+                        <span className="font-semibold text-sm text-center">In Review</span>
+                        <span className="text-xs opacity-75 mt-1 text-center">Mark as actively reviewing</span>
                     </button>
                     <button 
                         onClick={handleRequestChanges}
-                        className="flex items-center gap-5 p-6 rounded-3xl border-2 border-transparent bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800 text-red-700 dark:text-red-400 transition-all group text-left"
+                        className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-transparent bg-red-50 hover:bg-red-100 hover:border-red-200 text-red-700 transition-all group"
                     >
-                        <div className="w-14 h-14 bg-white dark:bg-surface rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                            <AlertCircle className="w-7 h-7" />
-                        </div>
-                        <div>
-                            <span className="block font-black text-lg tracking-tight">Request Changes</span>
-                            <span className="text-xs opacity-60 font-medium">Locks version & requires update</span>
-                        </div>
+                        <AlertCircle className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
+                        <span className="font-semibold text-sm text-center">Request Changes</span>
+                        <span className="text-xs opacity-75 mt-1 text-center">Locks version & requires update</span>
                     </button>
                     <button 
                          onClick={handleApprove}
-                         className="flex items-center gap-5 p-6 rounded-3xl border-2 border-transparent bg-green-50 dark:bg-green-900/10 hover:bg-green-100 dark:hover:bg-green-900/20 hover:border-green-200 dark:hover:border-green-800 text-green-700 dark:text-green-400 transition-all group text-left"
+                         className="flex flex-col items-center justify-center p-4 rounded-lg border-2 border-transparent bg-green-50 hover:bg-green-100 hover:border-green-200 text-green-700 transition-all group"
                     >
-                        <div className="w-14 h-14 bg-white dark:bg-surface rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                            <CheckCircle className="w-7 h-7" />
-                        </div>
-                        <div>
-                            <span className="block font-black text-lg tracking-tight">Approve Version</span>
-                            <span className="text-xs opacity-60 font-medium">Mark as final & approved</span>
-                        </div>
+                        <CheckCircle className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
+                        <span className="font-semibold text-sm text-center">Approve Version</span>
+                        <span className="text-xs opacity-75 mt-1 text-center">Mark as final & approved</span>
                     </button>
-                </div>
-                
-                <div className="flex justify-end">
-                    <Button variant="ghost" onClick={() => setIsSubmitModalOpen(false)} className="rounded-xl px-8 h-12">Cancel</Button>
                 </div>
             </div>
         </div>
@@ -997,36 +1030,33 @@ export const ReviewRoom: React.FC = () => {
 
       {/* URL Update Modal */}
       {isUrlUpdateOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-             <div className="bg-surface rounded-3xl shadow-2xl p-8 w-full max-w-md animate-in zoom-in-95 duration-300 border border-border-color">
-                <div className="flex items-center gap-4 mb-8">
-                    <div className="w-12 h-12 bg-brand-500 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/20">
-                        <Globe className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-black text-text-primary tracking-tight">Update Website URL</h3>
-                        <p className="text-xs text-text-secondary opacity-60">Enter the new version URL.</p>
-                    </div>
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in">
+             <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+                <div className="p-4 border-b border-border-color flex justify-between items-center bg-background">
+                     <h3 className="font-semibold text-text-primary">Update Website URL</h3>
+                     <button onClick={() => setIsUrlUpdateOpen(false)} className="text-text-secondary hover:text-text-primary">
+                        <X className="w-5 h-5" />
+                     </button>
                 </div>
-                <form onSubmit={submitUrlVersion} className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-text-secondary opacity-60 ml-1">New Version URL</label>
+                <form onSubmit={submitUrlVersion} className="p-6">
+                    <div className="mb-4">
+                        <label className="text-sm font-medium text-text-primary block mb-2">New Version URL</label>
                         <div className="relative">
-                            <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary opacity-40" />
+                            <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
                             <input 
                                 type="url" 
                                 required
                                 autoFocus
                                 value={newUrlInput}
                                 onChange={(e) => setNewUrlInput(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 border border-border-color rounded-2xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none bg-background/50 text-text-primary placeholder-text-secondary/30 transition-all font-medium"
+                                className="w-full pl-9 pr-4 py-2 border border-border-color rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-surface text-text-primary"
                                 placeholder="https://example.com/v2"
                             />
                         </div>
                     </div>
                     <div className="flex justify-end gap-3">
-                         <Button type="button" variant="ghost" onClick={() => setIsUrlUpdateOpen(false)} className="rounded-xl px-6">Cancel</Button>
-                         <Button type="submit" className="rounded-xl px-8 shadow-lg shadow-brand-500/20">Update Version</Button>
+                         <Button type="button" variant="ghost" onClick={() => setIsUrlUpdateOpen(false)}>Cancel</Button>
+                         <Button type="submit">Update Version</Button>
                     </div>
                 </form>
              </div>

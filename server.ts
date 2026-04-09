@@ -5,6 +5,7 @@ import AdmZip from "adm-zip";
 import path from "path";
 import fs from "fs";
 import cors from "cors";
+import { put } from "@vercel/blob";
 
 async function startServer() {
   const app = express();
@@ -65,6 +66,38 @@ async function startServer() {
     limits: {
       fileSize: 100 * 1024 * 1024, // 100MB
       fieldSize: 100 * 1024 * 1024 // 100MB
+    }
+  });
+
+  app.post('/api/blob/upload', upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const token = process.env.BLOB_READ_WRITE_TOKEN;
+      if (!token) {
+        return res.status(500).json({ error: 'BLOB_READ_WRITE_TOKEN is not configured' });
+      }
+
+      const fileContent = fs.readFileSync(req.file.path);
+      const filename = req.body.filename || req.file.originalname;
+      const blobPath = `Files/${filename}`;
+
+      console.log(`Uploading to Vercel Blob: ${blobPath}`);
+      
+      const blob = await put(blobPath, fileContent, {
+        access: 'public',
+        token: token
+      });
+
+      // Clean up temp file
+      fs.unlinkSync(req.file.path);
+
+      res.json(blob);
+    } catch (error: any) {
+      console.error('Vercel Blob upload error:', error);
+      res.status(500).json({ error: error.message || 'Failed to upload to Vercel Blob' });
     }
   });
 

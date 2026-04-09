@@ -45,6 +45,7 @@ interface AXProofContextType {
   processUrl: (url: string) => Promise<{ url: string; assetType: AssetType }>;
   processAttachment: (file: File) => Promise<Attachment>;
   saveFileToApp: (file: File | Blob, name: string) => Promise<void>;
+  uploadToVercelBlob: (file: File | Blob, name: string) => Promise<{ url: string }>;
   deleteSavedFile: (id: string) => Promise<void>;
   rehydrateAsset: (projectId: string, versionId: string) => Promise<void>;
   warmupConnection: () => Promise<void>;
@@ -990,6 +991,24 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setSavedFiles(prev => [savedFile, ...prev]);
   };
 
+  const uploadToVercelBlob = async (file: File | Blob, name: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('filename', name);
+
+    const response = await fetch('/api/blob/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to upload to Vercel Blob');
+    }
+
+    return await response.json();
+  };
+
   const deleteSavedFile = async (id: string) => {
       await db.deleteSavedFile(id);
       setSavedFiles(prev => prev.filter(f => f.id !== id));
@@ -1133,6 +1152,7 @@ export const AXProofProvider: React.FC<{ children: React.ReactNode }> = ({ child
       processAttachment,
       savedFiles,
       saveFileToApp,
+      uploadToVercelBlob,
       deleteSavedFile,
       rehydrateAsset,
       warmupConnection,
